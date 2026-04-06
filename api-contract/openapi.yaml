@@ -1,0 +1,477 @@
+openapi: 3.0.3
+info:
+  title: Journey Orchestrator API
+  description: >
+    Platform service responsible for executing configurable journeys using a
+    state machine model. The service is business-agnostic and manages journey
+    definitions and journey instances driven by events.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: Journey Definitions
+  - name: Journey Instances
+  - name: Journey Instance History
+
+paths:
+
+  /journeys:
+    post:
+      tags:
+        - Journey Definitions
+      summary: Create a new journey definition
+      operationId: createJourneyDefinition
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJourneyDefinitionRequest"
+      responses:
+        "201":
+          description: Journey definition created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JourneyDefinitionResponse"
+
+    get:
+      tags:
+        - Journey Definitions
+      summary: List all journey definitions
+      operationId: listJourneyDefinitions
+      responses:
+        "200":
+          description: List of journey definitions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JourneyDefinitionResponse"
+
+  /journeys/{journeyCode}:
+    get:
+      tags:
+        - Journey Definitions
+      summary: Get all versions of a journey definition
+      operationId: getJourneyDefinitionsByCode
+      parameters:
+        - name: journeyCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Journey definitions found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JourneyDefinitionResponse"
+
+  /journey-instances:
+    post:
+      tags:
+        - Journey Instances
+      summary: Start a new journey instance
+      operationId: createJourneyInstance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateJourneyInstanceRequest"
+      responses:
+        "201":
+          description: Journey instance created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JourneyInstanceResponse"
+
+  /journey-instances/{instanceId}:
+    get:
+      tags:
+        - Journey Instances
+      summary: Get journey instance by id
+      operationId: getJourneyInstance
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Journey instance found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JourneyInstanceResponse"
+
+  /journey-instances/{instanceId}/events:
+    post:
+      tags:
+        - Journey Instances
+      summary: Send event to a journey instance
+      operationId: sendEvent
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventRequest"
+      responses:
+        "200":
+          description: Event processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JourneyInstanceResponse"
+
+  /journey-instances/{instanceId}/history:
+    get:
+      tags:
+        - Journey Instance History
+      summary: Get transition history for a journey instance
+      description: Retrieves the complete transition history for a specific journey instance in chronological order
+      operationId: getJourneyInstanceHistory
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          description: ID of the journey instance
+          schema:
+            type: string
+        - name: from
+          in: query
+          required: false
+          description: Filter history from this timestamp (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          description: Filter history to this timestamp (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: eventType
+          in: query
+          required: false
+          description: Filter by specific event type
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of events to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: offset
+          in: query
+          required: false
+          description: Number of events to skip (for pagination)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Transition history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransitionHistoryListResponse"
+        '404':
+          description: Journey instance not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+
+  schemas:
+
+    CreateJourneyDefinitionRequest:
+      type: object
+      required:
+        - journeyCode
+        - name
+        - version
+        - states
+        - transitions
+      properties:
+        journeyCode:
+          type: string
+        name:
+          type: string
+        version:
+          type: integer
+        states:
+          type: array
+          items:
+            $ref: "#/components/schemas/State"
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransitionRequest"
+
+    JourneyDefinitionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        journeyCode:
+          type: string
+        name:
+          type: string
+        version:
+          type: integer
+        states:
+          type: array
+          items:
+            $ref: "#/components/schemas/State"
+        transitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransitionResponse"
+        active:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    State:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/StateType"
+
+    StateType:
+      type: string
+      enum:
+        - INITIAL
+        - INTERMEDIATE
+        - FINAL
+
+    TransitionRequest:
+      type: object
+      required:
+        - source
+        - event
+        - target
+      properties:
+        source:
+          type: string
+        event:
+          type: string
+        target:
+          type: string
+        condition:
+          type: string
+          description: Optional SpEL expression for conditional transitions
+          example: "#eventData.amount > 1000 AND #eventData.priority == 'HIGH'"
+
+    TransitionResponse:
+      type: object
+      properties:
+        source:
+          type: string
+        event:
+          type: string
+        target:
+          type: string
+        condition:
+          type: string
+          description: Optional SpEL expression for conditional transitions
+          example: "#eventData.amount > 1000 AND #eventData.priority == 'HIGH'"
+
+    CreateJourneyInstanceRequest:
+      type: object
+      required:
+        - journeyCode
+        - version
+      properties:
+        journeyCode:
+          type: string
+        version:
+          type: integer
+        context:
+          type: object
+          additionalProperties: true
+
+    EventRequest:
+      type: object
+      required:
+        - event
+      properties:
+        event:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+
+    JourneyInstanceResponse:
+      type: object
+      properties:
+        instanceId:
+          type: string
+        journeyCode:
+          type: string
+        version:
+          type: integer
+        currentState:
+          type: string
+        status:
+          $ref: "#/components/schemas/JourneyStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    JourneyStatus:
+      type: string
+      enum:
+        - RUNNING
+        - COMPLETED
+        - FAILED
+        - CANCELLED
+
+    TransitionHistoryListResponse:
+      type: object
+      properties:
+        instanceId:
+          type: string
+          description: ID of the journey instance
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransitionHistoryEventResponse"
+        pagination:
+          $ref: "#/components/schemas/PaginationInfo"
+        totalCount:
+          type: integer
+          description: Total number of events in history
+
+    TransitionHistoryEventResponse:
+      type: object
+      required:
+        - id
+        - instanceId
+        - fromState
+        - toState
+        - event
+        - timestamp
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the history event
+        instanceId:
+          type: string
+          description: ID of the journey instance
+        fromState:
+          type: string
+          description: Previous state before transition
+        toState:
+          type: string
+          description: New state after transition
+        event:
+          $ref: "#/components/schemas/EventInfo"
+        timestamp:
+          type: string
+          format: date-time
+          description: When the transition occurred (ISO 8601)
+        metadata:
+          type: object
+          description: Additional context information
+          additionalProperties: true
+        sequenceNumber:
+          type: integer
+          description: Sequence number for ordering same-millisecond events
+
+    EventInfo:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Type of the event that triggered the transition
+        data:
+          type: object
+          description: Event-specific data
+          additionalProperties: true
+
+    PaginationInfo:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: Number of events returned in this page
+        offset:
+          type: integer
+          description: Number of events skipped
+        hasNext:
+          type: boolean
+          description: Whether there are more events available
+        hasPrevious:
+          type: boolean
+          description: Whether there are previous events available
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code
+            message:
+              type: string
+              description: Human-readable error message
+            details:
+              type: object
+              description: Additional error details
+              additionalProperties: true

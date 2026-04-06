@@ -1,0 +1,43 @@
+.journey-list {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.journey-list-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.journey-list-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.journey-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .journey-list {
+    padding: 1rem;
+  }
+  
+  .journey-list-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .journey-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}

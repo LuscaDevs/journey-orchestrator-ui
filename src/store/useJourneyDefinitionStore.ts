@@ -51,29 +51,34 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     };
 
     set((state) => ({
-      definitions: [...state.definitions, newDefinition],
       currentDefinition: newDefinition,
       canvasNodes: [],
       canvasEdges: [],
-      hasUnsavedChanges: false
+      hasUnsavedChanges: true // Mark as unsaved since it's not in the list yet
     }));
   },
 
   updateDefinition: (name) => {
-    const { currentDefinition, canvasNodes, canvasEdges } = get();
+    const { currentDefinition, canvasNodes, canvasEdges, definitions } = get();
     if (!currentDefinition) return;
 
+    // Check if this is the first time saving (not in definitions list yet)
+    const isNewDefinition = !definitions.some(def => def.id === currentDefinition.id);
+    
     const updatedDefinition = toJourneyDefinition(
       canvasNodes,
       canvasEdges,
       name,
-      currentDefinition
+      currentDefinition,
+      !isNewDefinition // Only increment version if it's not a new definition
     );
 
     set((state) => ({
-      definitions: state.definitions.map(def =>
-        def.id === updatedDefinition.id ? updatedDefinition : def
-      ),
+      definitions: isNewDefinition 
+        ? [...state.definitions, updatedDefinition] // Add to list if new
+        : state.definitions.map(def => // Update existing if not new
+            def.id === updatedDefinition.id ? updatedDefinition : def
+          ),
       currentDefinition: updatedDefinition,
       hasUnsavedChanges: false
     }));

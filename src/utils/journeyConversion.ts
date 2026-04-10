@@ -6,7 +6,8 @@ export const toJourneyDefinition = (
   nodes: Node[],
   edges: Edge[],
   name: string,
-  existingDefinition?: JourneyDefinition
+  existingDefinition?: JourneyDefinition,
+  isSavedDefinition?: boolean
 ): JourneyDefinition => {
   const now = new Date().toISOString();
   
@@ -31,7 +32,7 @@ export const toJourneyDefinition = (
   return {
     id: existingDefinition?.id || uuidv4(),
     name,
-    version: existingDefinition ? existingDefinition.version + 1 : 1,
+    version: isSavedDefinition && existingDefinition ? existingDefinition.version + 1 : (existingDefinition?.version || 1),
     nodes: journeyNodes,
     edges: journeyEdges,
     metadata: {

@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { JourneyDefinitionsPage } from './pages/JourneyDefinitionsPage'
+import Dashboard from './components/Dashboard'
 import JourneyEditorWithControls from './components/JourneyEditorWithControls'
 import './App.css'
 
@@ -11,18 +11,11 @@ function App() {
   return (
     <BrowserRouter>
       <div className="app">
-        <nav className="app-nav">
-          <h1>Journey Orchestrator</h1>
-          <a href="/journey-definitions">Journey Definitions</a>
-          <a href="/editor">Visual Editor</a>
-        </nav>
-
         <main className="app-main">
           <Routes>
-            <Route path="/journey-definitions" element={<JourneyDefinitionsPage />} />
             <Route path="/editor" element={<JourneyEditorWithControls />} />
             <Route path="/journeys/:journeyCode" element={<JourneyDetailsPage />} />
-            <Route path="/" element={<JourneyDefinitionsPage />} />
+            <Route path="/" element={<Dashboard />} />
           </Routes>
         </main>
 

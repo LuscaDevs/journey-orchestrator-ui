@@ -36,6 +36,8 @@ interface JourneyDefinitionActions {
   addEdge: (source: string, target: string, event?: string) => void;
   removeEdge: (edgeId: string) => void;
   updateNodeName: (nodeId: string, newName: string) => void;
+  updateEdgeName: (edgeId: string, newName: string) => void;
+  updateEdgeConditions: (edgeId: string, conditions: string) => void;
 }
 
 export const useJourneyDefinitionStore = create<JourneyDefinitionState & JourneyDefinitionActions>((set, get) => ({
@@ -190,6 +192,19 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     
     if (!currentDefinition) return;
 
+    // Get current React Flow nodes/edges for comparison
+    const currentReactFlowNodes = fromJourneyDefinition(currentDefinition).nodes;
+    const currentReactFlowEdges = fromJourneyDefinition(currentDefinition).edges;
+    
+    // Compare React Flow format nodes/edges to detect actual changes
+    const nodesEqual = JSON.stringify(currentReactFlowNodes) === JSON.stringify(nodes);
+    const edgesEqual = JSON.stringify(currentReactFlowEdges) === JSON.stringify(edges);
+    
+    if (nodesEqual && edgesEqual) {
+      console.log('updateCurrentDefinition: skipping - only selection changed');
+      return;
+    }
+
     const updatedDefinition = toJourneyDefinition(
       nodes,
       edges,
@@ -197,20 +212,6 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       currentDefinition,
       false // Don't increment version for canvas updates
     );
-
-    // Check if this is just a selection change by comparing nodes/edges content
-    const currentNodes = currentDefinition.nodes;
-    const currentEdges = currentDefinition.edges;
-    const newNodes = updatedDefinition.nodes;
-    const newEdges = updatedDefinition.edges;
-    
-    const nodesEqual = JSON.stringify(currentNodes) === JSON.stringify(newNodes);
-    const edgesEqual = JSON.stringify(currentEdges) === JSON.stringify(newEdges);
-    
-    if (nodesEqual && edgesEqual) {
-      console.log('updateCurrentDefinition: skipping - only selection changed');
-      return;
-    }
 
     console.log('updateCurrentDefinition: updating store - actual content changed');
     set((state) => ({
@@ -341,7 +342,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       id: uuidv4(),
       source,
       target,
-      type: 'smoothstep' as const,
+      type: 'transition' as const,
       data: {
         event,
       },
@@ -373,5 +374,33 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     );
     
     get().updateCurrentDefinition(updatedNodes, edges);
+  },
+
+  updateEdgeName: (edgeId, newName) => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
+    const updatedEdges = edges.map((edge) =>
+      edge.id === edgeId
+        ? { ...edge, data: { ...edge.data, event: newName } }
+        : edge
+    );
+    
+    get().updateCurrentDefinition(nodes, updatedEdges);
+  },
+
+  updateEdgeConditions: (edgeId, conditions) => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
+    const updatedEdges = edges.map((edge) =>
+      edge.id === edgeId
+        ? { ...edge, data: { ...edge.data, condition: conditions } }
+        : edge
+    );
+    
+    get().updateCurrentDefinition(nodes, updatedEdges);
   },
 }));

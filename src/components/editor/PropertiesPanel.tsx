@@ -3,8 +3,9 @@
 import { useJourneyDefinitionStore } from "../../store/useJourneyDefinitionStore"
 import { cn } from "../../lib/utils"
 import { Input } from "../ui/Input"
+import { Textarea } from "../ui/Textarea"
 import { Button } from "../ui/Button"
-import { Label } from "../ui/Label"
+import { Label } from "../ui/label"
 import {
   Select,
   SelectContent,
@@ -31,6 +32,8 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
     setSelectedNode,
     setSelectedEdge,
     updateNodeName,
+    updateEdgeName,
+    updateEdgeConditions,
     removeNode,
     removeEdge,
     getNodes,
@@ -48,8 +51,20 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
   }
 
   const handleNodeNameChange = (newName: string) => {
-    if (selectedNode && newName.trim()) {
-      updateNodeName(selectedNode.id, newName.trim())
+    if (selectedNode) {
+      updateNodeName(selectedNode.id, newName)
+    }
+  }
+
+  const handleEdgeNameChange = (newName: string) => {
+    if (selectedEdge) {
+      updateEdgeName(selectedEdge.id, newName)
+    }
+  }
+
+  const handleEdgeConditionsChange = (conditions: string) => {
+    if (selectedEdge) {
+      updateEdgeConditions(selectedEdge.id, conditions)
     }
   }
 
@@ -224,9 +239,23 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
               <Input
                 id="edge-event"
                 value={selectedEdge.data?.event || 'transition'}
-                readOnly
+                onChange={(e) => handleEdgeNameChange(e.target.value)}
                 placeholder="Nome do evento"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edge-conditions">Condições</Label>
+              <Textarea
+                id="edge-conditions"
+                value={selectedEdge.data?.condition || ''}
+                onChange={(e) => handleEdgeConditionsChange(e.target.value)}
+                placeholder="Ex: score >= 700"
+                rows={2}
+              />
+              <p className="text-xs text-muted-foreground">
+                Expressão condicional para esta transição (opcional)
+              </p>
             </div>
 
             <div className="pt-4 border-t border-border">

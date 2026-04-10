@@ -15,6 +15,7 @@ import {
   type Node,
   type Edge,
   type NodeTypes,
+  type EdgeTypes,
   BackgroundVariant,
   type Connection,
 } from "reactflow"
@@ -22,12 +23,18 @@ import "reactflow/dist/style.css"
 
 import { useJourneyDefinitionStore } from "../../store/useJourneyDefinitionStore"
 import StateNode from "../StateNode"
+import { TransitionEdge } from "./edges/TransitionEdge"
 import { cn } from "../../lib/utils"
 import { v4 as uuidv4 } from 'uuid'
 
 // Define nodeTypes outside component to prevent recreation
 const nodeTypes: NodeTypes = {
   stateNode: StateNode,
+}
+
+// Define edgeTypes outside component to prevent recreation
+const edgeTypes: EdgeTypes = {
+  transition: TransitionEdge,
 }
 
 // Define NodeData interface locally
@@ -76,6 +83,7 @@ interface CanvasAreaProps {
 export function CanvasArea({ className }: CanvasAreaProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
   const {
+    currentDefinition,
     getNodes: getStoreNodes,
     getEdges: getStoreEdges,
     addNode: addStoreNode,
@@ -99,13 +107,21 @@ export function CanvasArea({ className }: CanvasAreaProps) {
   // Track if component has been initialized
   const isInitialized = useRef(false)
 
+  // Track if changes originated from canvas (dragging) to prevent sync loop
+  const isCanvasUpdate = useRef(false)
+
   // Sync with store when nodes/edges change (from canvas interactions)
   useEffect(() => {
     if (!isInitialized.current) {
       isInitialized.current = true
       return // Skip on initial load
     }
+    isCanvasUpdate.current = true
     updateCurrentDefinition(nodes, edges)
+    // Reset flag after a short delay to allow store update to complete
+    setTimeout(() => {
+      isCanvasUpdate.current = false
+    }, 0)
   }, [nodes, edges, updateCurrentDefinition])
 
   // Use refs to track previous state and prevent infinite loops
@@ -114,6 +130,12 @@ export function CanvasArea({ className }: CanvasAreaProps) {
 
   // Sync store changes back to React Flow (for Properties Panel edits)
   useEffect(() => {
+    // Skip if changes originated from canvas (dragging) to prevent sync loop
+    if (isCanvasUpdate.current) {
+      console.log('CanvasArea: Skipping sync - change originated from canvas')
+      return
+    }
+
     const storeNodes = getStoreNodes()
     const storeEdges = getStoreEdges()
     
@@ -127,7 +149,7 @@ export function CanvasArea({ className }: CanvasAreaProps) {
       prevStoreNodesRef.current = storeNodes
       prevStoreEdgesRef.current = storeEdges
     }
-  }, [getStoreNodes, getStoreEdges, setNodes, setEdges])
+  }, [currentDefinition, getStoreNodes, getStoreEdges, setNodes, setEdges])
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -140,7 +162,7 @@ export function CanvasArea({ className }: CanvasAreaProps) {
             id: uuidv4(),
             source: connection.source,
             target: connection.target,
-            type: 'smoothstep' as const,
+            type: 'transition' as const,
             data: {
               event: 'transition',
             },
@@ -242,6 +264,7 @@ export function CanvasArea({ className }: CanvasAreaProps) {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

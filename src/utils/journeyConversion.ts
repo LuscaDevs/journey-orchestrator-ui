@@ -64,7 +64,7 @@ export const fromJourneyDefinition = (definition: JourneyDefinition): {
     id: journeyEdge.id,
     source: journeyEdge.source,
     target: journeyEdge.target,
-    type: 'smoothstep',
+    type: 'transition',
     data: {
       event: journeyEdge.event,
       condition: journeyEdge.condition

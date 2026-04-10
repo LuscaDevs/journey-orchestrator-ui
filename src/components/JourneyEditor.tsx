@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -19,10 +19,19 @@ import {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
-import { useJourneyStore } from '../store/useJourneyStore';
 import { useJourneyDefinitionStore } from '../store/useJourneyDefinitionStore';
 import StateNode from './StateNode';
-import type { NodeData } from '../store/useJourneyStore';
+
+// Define nodeTypes outside component to prevent recreation
+const nodeTypes: NodeTypes = {
+  stateNode: StateNode,
+};
+
+// Define NodeData interface locally since we removed it from the store
+interface NodeData {
+  name: string;
+  type: 'INITIAL' | 'INTERMEDIATE' | 'FINAL';
+}
 
 // Connection validation rules
 const validateConnection = (
@@ -59,57 +68,58 @@ const validateConnection = (
 
 const JourneyEditorContent: React.FC = () => {
   const {
-    selectedNode,
-    selectedEdge,
-    selectNode,
-    selectEdge,
+    getNodes,
+    getEdges,
     addNode,
     removeNode,
-    addEdge: addStoreEdge,
+    addEdge,
     removeEdge,
     updateNodeName,
-  } = useJourneyStore();
-
-  const {
-    currentDefinition,
-    canvasNodes,
-    canvasEdges,
-    updateCanvasState,
-    hasUnsavedChanges,
+    updateCurrentDefinition,
   } = useJourneyDefinitionStore();
 
-  // Define custom node types
-  const nodeTypes: NodeTypes = useMemo(() => ({
-    stateNode: StateNode,
-  }), []);
+  // Use refs to track previous state and prevent infinite loops
+  const prevNodesRef = useRef<Node[]>([]);
+  const prevEdgesRef = useRef<Edge[]>([]);
 
-  const [nodesState, setNodesState, onNodesChange] = useNodesState(canvasNodes);
-  const [edgesState, setEdgesState, onEdgesChange] = useEdgesState(canvasEdges);
+  // Get derived state
+  const nodes = getNodes();
+  const edges = getEdges();
 
-  // Synchronize JourneyDefinition store with ReactFlow state
-  React.useEffect(() => {
-    setNodesState(canvasNodes);
-  }, [canvasNodes, setNodesState]);
+  // Use React Flow local state
+  const [nodesState, setNodesState, onNodesChange] = useNodesState(nodes);
+  const [edgesState, setEdgesState, onEdgesChange] = useEdgesState(edges);
 
-  React.useEffect(() => {
-    setEdgesState(canvasEdges);
-  }, [canvasEdges, setEdgesState]);
+  // Sync React Flow state with store when store changes, but prevent infinite loops
+  useEffect(() => {
+    const nodesChanged = JSON.stringify(prevNodesRef.current) !== JSON.stringify(nodes);
+    const edgesChanged = JSON.stringify(prevEdgesRef.current) !== JSON.stringify(edges);
+
+    if (nodesChanged || edgesChanged) {
+      setNodesState(nodes);
+      setEdgesState(edges);
+      prevNodesRef.current = nodes;
+      prevEdgesRef.current = edges;
+    }
+  }, [nodes, edges, setNodesState, setEdgesState]);
 
   const onConnect = useCallback(
     (params: Connection) => {
       console.log('onConnect called:', params);
       
       if (params.source && params.target) {
+        // Get current nodes for validation
+        const currentNodes = getNodes();
         // Validate connection before creating edge
-        if (validateConnection(params, canvasNodes)) {
-          addStoreEdge(params.source, params.target, 'transition');
+        if (validateConnection(params, currentNodes)) {
+          addEdge(params.source, params.target, 'transition');
         } else {
           console.warn('Invalid connection attempted:', params);
           // Optionally show user feedback about invalid connection
         }
       }
     },
-    [addStoreEdge, canvasNodes]
+    [addEdge, getNodes]
   );
 
   const onSelectionChange = useCallback(
@@ -119,41 +129,36 @@ const JourneyEditorContent: React.FC = () => {
 
       console.log('onSelectionChange:', { selectedNodes, selectedEdges });
 
-      if (selectedNodes.length > 0) {
-        console.log('Selecting node:', selectedNodes[0].id);
-        selectNode(selectedNodes[0].id);
-      } else if (selectedEdges.length > 0) {
-        console.log('Selecting edge:', selectedEdges[0].id);
-        selectEdge(selectedEdges[0].id);
-      } else {
-        console.log('Clearing selection');
-        selectNode(null);
-        selectEdge(null);
-      }
+      // Selection is handled locally in JourneyEditorWithControls
+      // We don't need to update the store for selection
     },
-    [selectNode, selectEdge]
+    []
   );
 
   const onNodesChangeHandler = useCallback(
     (changes: any[]) => {
       onNodesChange(changes);
       
-      // Update JourneyDefinition store with new nodes state
-      const updatedNodes = applyNodeChanges(changes, canvasNodes);
-      updateCanvasState(updatedNodes, canvasEdges);
+      // Get updated state and update JourneyDefinition store
+      const currentNodes = getNodes();
+      const currentEdges = getEdges();
+      const updatedNodes = applyNodeChanges(changes, currentNodes);
+      updateCurrentDefinition(updatedNodes, currentEdges);
     },
-    [onNodesChange, canvasNodes, canvasEdges, updateCanvasState]
+    [onNodesChange, getNodes, getEdges, updateCurrentDefinition]
   );
 
   const onEdgesChangeHandler = useCallback(
     (changes: any[]) => {
       onEdgesChange(changes);
       
-      // Update JourneyDefinition store with new edges state
-      const updatedEdges = applyEdgeChanges(changes, canvasEdges);
-      updateCanvasState(canvasNodes, updatedEdges);
+      // Get updated state and update JourneyDefinition store
+      const currentNodes = getNodes();
+      const currentEdges = getEdges();
+      const updatedEdges = applyEdgeChanges(changes, currentEdges);
+      updateCurrentDefinition(currentNodes, updatedEdges);
     },
-    [onEdgesChange, canvasNodes, canvasEdges, updateCanvasState]
+    [onEdgesChange, getNodes, getEdges, updateCurrentDefinition]
   );
 
   return (
@@ -166,7 +171,7 @@ const JourneyEditorContent: React.FC = () => {
         onEdgesChange={onEdgesChangeHandler}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
-        isValidConnection={(connection) => validateConnection(connection, canvasNodes)}
+        isValidConnection={(connection) => validateConnection(connection, nodesState)}
         fitView
         selectNodesOnDrag={false}
         panOnDrag={true}

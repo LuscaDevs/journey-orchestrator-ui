@@ -1,20 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import JourneyEditor from './JourneyEditor';
-import { useJourneyStore } from '../store/useJourneyStore';
 import { useJourneyDefinitionStore } from '../store/useJourneyDefinitionStore';
 import { toDSL } from '../utils/dslMapper';
 
 const JourneyEditorWithControls: React.FC = () => {
   const navigate = useNavigate();
-  const { addNode, selectedNode, selectedEdge, removeNode, removeEdge, selectNode, selectEdge } = useJourneyStore();
   const {
     currentDefinition,
     updateDefinition,
     deleteDefinition,
     discardChanges,
     hasUnsavedChanges,
+    addNode,
+    removeNode,
+    addEdge,
+    removeEdge,
+    updateNodeName,
   } = useJourneyDefinitionStore();
+
+  // For now, we'll use local state for selection since it's UI-only
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
+
+  const selectNode = (nodeId: string | null) => setSelectedNode(nodeId);
+  const selectEdge = (edgeId: string | null) => setSelectedEdge(edgeId);
   const [showNodeTypeDialog, setShowNodeTypeDialog] = useState(false);
   const [journeyName, setJourneyName] = useState('');
 
@@ -41,8 +51,10 @@ const JourneyEditorWithControls: React.FC = () => {
 
   const handleExportDSL = () => {
     try {
-      const { canvasNodes, canvasEdges } = useJourneyDefinitionStore.getState();
-      const dslDefinition = toDSL(canvasNodes, canvasEdges);
+      const { getNodes, getEdges } = useJourneyDefinitionStore.getState();
+      const nodes = getNodes();
+      const edges = getEdges();
+      const dslDefinition = toDSL(nodes, edges);
       console.log('DSL Export:', JSON.stringify(dslDefinition, null, 2));
     } catch (error) {
       console.error('Error exporting DSL:', error);
@@ -82,6 +94,11 @@ const JourneyEditorWithControls: React.FC = () => {
     if (confirm('Tem certeza que deseja excluir esta jornada?')) {
       deleteDefinition(definitionId);
     }
+  };
+
+  const handleDiscardChanges = () => {
+    discardChanges();
+    navigate('/');
   };
 
   return (
@@ -134,7 +151,7 @@ const JourneyEditorWithControls: React.FC = () => {
 
               {hasUnsavedChanges && (
                 <button
-                  onClick={discardChanges}
+                  onClick={handleDiscardChanges}
                   style={{
                     padding: '8px 16px',
                     backgroundColor: '#6c757d',

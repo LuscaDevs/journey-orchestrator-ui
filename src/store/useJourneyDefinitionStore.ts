@@ -7,8 +7,6 @@ import type { Node, Edge } from 'reactflow';
 interface JourneyDefinitionState {
   currentDefinition: JourneyDefinition | null;
   definitions: JourneyDefinition[];
-  canvasNodes: Node[];
-  canvasEdges: Edge[];
   hasUnsavedChanges: boolean;
 }
 
@@ -17,17 +15,27 @@ interface JourneyDefinitionActions {
   createDefinition: (name: string) => void;
   updateDefinition: (name: string) => void;
   deleteDefinition: (id: string) => void;
-  loadDefinitionIntoCanvas: (definition: JourneyDefinition) => void;
-  updateCanvasState: (nodes: Node[], edges: Edge[]) => void;
+  loadDefinition: (definition: JourneyDefinition) => void;
+  updateCurrentDefinition: (nodes: Node[], edges: Edge[]) => void;
   saveCurrentDefinition: () => void;
   discardChanges: () => void;
+  // Derived state helpers
+  getNodes: () => Node[];
+  getEdges: () => Edge[];
+  getSelectedNode: () => string | null;
+  getSelectedEdge: () => string | null;
+  setSelectedNode: (nodeId: string | null) => void;
+  setSelectedEdge: (edgeId: string | null) => void;
+  addNode: (name?: string, nodeType?: 'INITIAL' | 'INTERMEDIATE' | 'FINAL') => void;
+  removeNode: (nodeId: string) => void;
+  addEdge: (source: string, target: string, event?: string) => void;
+  removeEdge: (edgeId: string) => void;
+  updateNodeName: (nodeId: string, newName: string) => void;
 }
 
 export const useJourneyDefinitionStore = create<JourneyDefinitionState & JourneyDefinitionActions>((set, get) => ({
   currentDefinition: null,
   definitions: [],
-  canvasNodes: [],
-  canvasEdges: [],
   hasUnsavedChanges: false,
 
   setCurrentDefinition: (definition) => {
@@ -52,22 +60,23 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
 
     set((state) => ({
       currentDefinition: newDefinition,
-      canvasNodes: [],
-      canvasEdges: [],
       hasUnsavedChanges: true // Mark as unsaved since it's not in the list yet
     }));
   },
 
   updateDefinition: (name) => {
-    const { currentDefinition, canvasNodes, canvasEdges, definitions } = get();
+    const { currentDefinition, definitions } = get();
     if (!currentDefinition) return;
+
+    // Get current nodes and edges from currentDefinition
+    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
 
     // Check if this is the first time saving (not in definitions list yet)
     const isNewDefinition = !definitions.some(def => def.id === currentDefinition.id);
     
     const updatedDefinition = toJourneyDefinition(
-      canvasNodes,
-      canvasEdges,
+      nodes,
+      edges,
       name,
       currentDefinition,
       !isNewDefinition // Only increment version if it's not a new definition
@@ -92,66 +101,187 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       return {
         definitions: newDefinitions,
         currentDefinition: shouldClearCurrent ? null : state.currentDefinition,
-        canvasNodes: shouldClearCurrent ? [] : state.canvasNodes,
-        canvasEdges: shouldClearCurrent ? [] : state.canvasEdges,
         hasUnsavedChanges: false
       };
     });
   },
 
-  loadDefinitionIntoCanvas: (definition) => {
-    const { nodes, edges } = fromJourneyDefinition(definition);
+  loadDefinition: (definition) => {
     set({
       currentDefinition: definition,
-      canvasNodes: nodes,
-      canvasEdges: edges,
       hasUnsavedChanges: false
     });
   },
 
-  updateCanvasState: (nodes, edges) => {
-    const { canvasNodes, canvasEdges } = get();
-    
-    // Simple comparison to detect changes
-    const nodesChanged = JSON.stringify(nodes) !== JSON.stringify(canvasNodes);
-    const edgesChanged = JSON.stringify(edges) !== JSON.stringify(canvasEdges);
-    
-    set({
-      canvasNodes: nodes,
-      canvasEdges: edges,
-      hasUnsavedChanges: nodesChanged || edgesChanged
-    });
-  },
-
-  saveCurrentDefinition: () => {
-    const { currentDefinition, canvasNodes, canvasEdges } = get();
+  updateCurrentDefinition: (nodes, edges) => {
+    const { currentDefinition } = get();
     if (!currentDefinition) return;
 
     const updatedDefinition = toJourneyDefinition(
-      canvasNodes,
-      canvasEdges,
+      nodes,
+      edges,
       currentDefinition.name,
-      currentDefinition
+      currentDefinition,
+      false // Don't increment version for canvas updates
     );
 
     set((state) => ({
-      definitions: state.definitions.map(def =>
-        def.id === updatedDefinition.id ? updatedDefinition : def
-      ),
       currentDefinition: updatedDefinition,
+      hasUnsavedChanges: true
+    }));
+  },
+
+  saveCurrentDefinition: () => {
+    const { currentDefinition, definitions } = get();
+    if (!currentDefinition) return;
+
+    set((state) => ({
+      definitions: state.definitions.some(def => def.id === currentDefinition.id)
+        ? state.definitions.map(def => def.id === currentDefinition.id ? currentDefinition : def)
+        : [...state.definitions, currentDefinition],
       hasUnsavedChanges: false
     }));
   },
 
   discardChanges: () => {
+    const { currentDefinition, definitions } = get();
+    if (!currentDefinition) return;
+
+    const originalDefinition = definitions.find(def => def.id === currentDefinition.id);
+    if (originalDefinition) {
+      set({
+        currentDefinition: originalDefinition,
+        hasUnsavedChanges: false
+      });
+    }
+  },
+
+  // Derived state helpers
+  getNodes: () => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return [];
+    return fromJourneyDefinition(currentDefinition).nodes;
+  },
+
+  getEdges: () => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return [];
+    return fromJourneyDefinition(currentDefinition).edges;
+  },
+
+  getSelectedNode: () => {
+    // This would need to be tracked in currentDefinition metadata or separate state
+    return null; // Simplified for now
+  },
+
+  getSelectedEdge: () => {
+    // This would need to be tracked in currentDefinition metadata or separate state
+    return null; // Simplified for now
+  },
+
+  setSelectedNode: (nodeId) => {
+    // Store selection in currentDefinition metadata or separate state
+    // Simplified for now
+  },
+
+  setSelectedEdge: (edgeId) => {
+    // Store selection in currentDefinition metadata or separate state
+    // Simplified for now
+  },
+
+  addNode: (name = 'Novo Estado', nodeType: 'INITIAL' | 'INTERMEDIATE' | 'FINAL' = 'INTERMEDIATE') => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    // Check for existing initial or final states
+    if (nodeType === 'INITIAL') {
+      const existingInitial = currentDefinition.nodes.some(node => node.type === 'INITIAL');
+      if (existingInitial) {
+        console.warn('Já existe um estado inicial. Apenas um estado inicial é permitido.');
+        return;
+      }
+    }
+
+    if (nodeType === 'FINAL') {
+      const existingFinal = currentDefinition.nodes.some(node => node.type === 'FINAL');
+      if (existingFinal) {
+        console.warn('Já existe um estado final. Apenas um estado final é permitido.');
+        return;
+      }
+    }
+
+    const newNode = {
+      id: uuidv4(),
+      type: 'stateNode' as const,
+      position: {
+        x: Math.random() * 400 + 100,
+        y: Math.random() * 300 + 100,
+      },
+      data: { 
+        name,
+        type: nodeType 
+      },
+    };
+
+    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
+    const updatedNodes = [...nodes, newNode];
+    
+    get().updateCurrentDefinition(updatedNodes, edges);
+  },
+
+  removeNode: (nodeId) => {
     const { currentDefinition } = get();
     if (!currentDefinition) return;
 
     const { nodes, edges } = fromJourneyDefinition(currentDefinition);
-    set({
-      canvasNodes: nodes,
-      canvasEdges: edges,
-      hasUnsavedChanges: false
-    });
-  }
+    const filteredNodes = nodes.filter((node) => node.id !== nodeId);
+    const filteredEdges = edges.filter(
+      (edge) => edge.source !== nodeId && edge.target !== nodeId
+    );
+    
+    get().updateCurrentDefinition(filteredNodes, filteredEdges);
+  },
+
+  addEdge: (source, target, event = 'transition') => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
+    const newEdge = {
+      id: uuidv4(),
+      source,
+      target,
+      type: 'smoothstep' as const,
+      data: {
+        event,
+      },
+    };
+
+    const updatedEdges = [...edges, newEdge];
+    get().updateCurrentDefinition(nodes, updatedEdges);
+  },
+
+  removeEdge: (edgeId) => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
+    const filteredEdges = edges.filter((edge) => edge.id !== edgeId);
+    
+    get().updateCurrentDefinition(nodes, filteredEdges);
+  },
+
+  updateNodeName: (nodeId, newName) => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
+    const updatedNodes = nodes.map((node) =>
+      node.id === nodeId
+        ? { ...node, data: { ...node.data, name: newName } }
+        : node
+    );
+    
+    get().updateCurrentDefinition(updatedNodes, edges);
+  },
 }));

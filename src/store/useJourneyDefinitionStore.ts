@@ -228,6 +228,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       definitions: state.definitions.some(def => def.id === currentDefinition.id)
         ? state.definitions.map(def => def.id === currentDefinition.id ? currentDefinition : def)
         : [...state.definitions, currentDefinition],
+      currentDefinition: currentDefinition,
+      initialDefinition: JSON.parse(JSON.stringify(currentDefinition)), // Update initialDefinition to match saved state
       hasUnsavedChanges: false
     }));
   },

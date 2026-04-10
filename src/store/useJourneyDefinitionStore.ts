@@ -6,8 +6,10 @@ import type { Node, Edge } from 'reactflow';
 
 interface JourneyDefinitionState {
   currentDefinition: JourneyDefinition | null;
+  initialDefinition: JourneyDefinition | null; // Store initial state for comparison
   definitions: JourneyDefinition[];
   hasUnsavedChanges: boolean;
+  isInitializing: boolean; // Flag to prevent updates during initialization
 }
 
 interface JourneyDefinitionActions {
@@ -19,6 +21,7 @@ interface JourneyDefinitionActions {
   updateCurrentDefinition: (nodes: Node[], edges: Edge[]) => void;
   saveCurrentDefinition: () => void;
   discardChanges: () => void;
+  hasActualChanges: () => boolean;
   // Derived state helpers
   getNodes: () => Node[];
   getEdges: () => Edge[];
@@ -35,8 +38,10 @@ interface JourneyDefinitionActions {
 
 export const useJourneyDefinitionStore = create<JourneyDefinitionState & JourneyDefinitionActions>((set, get) => ({
   currentDefinition: null,
+  initialDefinition: null,
   definitions: [],
   hasUnsavedChanges: false,
+  isInitializing: false,
 
   setCurrentDefinition: (definition) => {
     set({ 
@@ -55,7 +60,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       metadata: {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }
+      },
+      status: 'draft'
     };
 
     set((state) => ({
@@ -107,14 +113,60 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   },
 
   loadDefinition: (definition) => {
-    set({
+    set({ 
       currentDefinition: definition,
-      hasUnsavedChanges: false
+      initialDefinition: JSON.parse(JSON.stringify(definition)), // Deep copy
+      hasUnsavedChanges: false,
+      isInitializing: true // Set initialization flag
     });
+    
+    // Clear initialization flag after a short delay to allow React Flow to settle
+    setTimeout(() => {
+      set({ isInitializing: false });
+    }, 100);
+  },
+
+  // Function to check if there are actual changes
+  hasActualChanges: () => {
+    const { currentDefinition, initialDefinition } = get();
+    console.log('hasActualChanges called:', { 
+      hasCurrent: !!currentDefinition, 
+      hasInitial: !!initialDefinition,
+      currentId: currentDefinition?.id,
+      initialId: initialDefinition?.id
+    });
+    
+    if (!currentDefinition || !initialDefinition) {
+      console.log('hasActualChanges: missing definitions, returning false');
+      return false;
+    }
+    
+    // Deep comparison of current vs initial state
+    const currentStr = JSON.stringify(currentDefinition);
+    const initialStr = JSON.stringify(initialDefinition);
+    const hasChanges = currentStr !== initialStr;
+    
+    console.log('hasActualChanges result:', hasChanges);
+    console.log('Current length:', currentStr.length, 'Initial length:', initialStr.length);
+    
+    return hasChanges;
   },
 
   updateCurrentDefinition: (nodes, edges) => {
-    const { currentDefinition } = get();
+    const { currentDefinition, isInitializing } = get();
+    console.log('updateCurrentDefinition called:', { 
+      nodesCount: nodes.length, 
+      edgesCount: edges.length,
+      hasCurrentDefinition: !!currentDefinition,
+      isInitializing
+    });
+    
+    // Skip updates during initialization
+    if (isInitializing) {
+      console.log('updateCurrentDefinition: skipping due to initialization');
+      return;
+    }
+    
     if (!currentDefinition) return;
 
     const updatedDefinition = toJourneyDefinition(
@@ -125,9 +177,10 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       false // Don't increment version for canvas updates
     );
 
+    console.log('updateCurrentDefinition: updating store');
     set((state) => ({
       currentDefinition: updatedDefinition,
-      hasUnsavedChanges: true
+      hasUnsavedChanges: true // Will be checked properly on exit
     }));
   },
 
@@ -197,7 +250,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     if (nodeType === 'INITIAL') {
       const existingInitial = currentDefinition.nodes.some(node => node.type === 'INITIAL');
       if (existingInitial) {
-        console.warn('Já existe um estado inicial. Apenas um estado inicial é permitido.');
+        alert('Já existe um estado inicial. Apenas um estado inicial é permitido.');
         return;
       }
     }
@@ -205,7 +258,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     if (nodeType === 'FINAL') {
       const existingFinal = currentDefinition.nodes.some(node => node.type === 'FINAL');
       if (existingFinal) {
-        console.warn('Já existe um estado final. Apenas um estado final é permitido.');
+        alert('Já existe um estado final. Apenas um estado final é permitido.');
         return;
       }
     }

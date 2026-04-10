@@ -30,4 +30,5 @@ export interface JourneyDefinition {
   nodes: JourneyNode[];
   edges: JourneyEdge[];
   metadata: JourneyDefinitionMetadata;
+  status: 'draft' | 'published';
 }

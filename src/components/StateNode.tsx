@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Handle, Position, type NodeProps } from 'reactflow';
+import React, { useState, useCallback } from 'react';
+import { Handle, Position, type NodeProps, useReactFlow } from 'reactflow';
 import { useJourneyDefinitionStore } from '../store/useJourneyDefinitionStore';
 
 // Define NodeData interface locally
@@ -10,6 +10,7 @@ interface NodeData {
 
 const StateNode: React.FC<NodeProps<NodeData>> = ({ data, selected, id }) => {
   const { updateNodeName } = useJourneyDefinitionStore();
+  const { setNodes } = useReactFlow();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(data.name);
 
@@ -18,25 +19,47 @@ const StateNode: React.FC<NodeProps<NodeData>> = ({ data, selected, id }) => {
     setEditName(data.name);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (editName.trim()) {
+        console.log('StateNode: Updating name from', data.name, 'to', editName.trim());
+        // Update store first
         updateNodeName(id, editName.trim());
+        
+        // Update React Flow state immediately for instant UI feedback
+        setNodes((nodes) => {
+          console.log('StateNode: setNodes called with', nodes.length, 'nodes');
+          return nodes.map((node) =>
+            node.id === id
+              ? { ...node, data: { ...node.data, name: editName.trim() } }
+              : node
+          );
+        });
       }
       setIsEditing(false);
     } else if (e.key === 'Escape') {
       setIsEditing(false);
       setEditName(data.name);
     }
-  };
+  }, [editName, id, updateNodeName, setNodes, data.name]);
 
-  const handleBlur = () => {
+  const handleBlur = useCallback(() => {
     if (editName.trim()) {
+      // Update store first
       updateNodeName(id, editName.trim());
+      
+      // Update React Flow state immediately for instant UI feedback
+      setNodes((nodes) => 
+        nodes.map((node) =>
+          node.id === id
+            ? { ...node, data: { ...node.data, name: editName.trim() } }
+            : node
+        )
+      );
     }
     setIsEditing(false);
-  };
+  }, [editName, id, updateNodeName, setNodes]);
   const getNodeColors = () => {
     switch (data.type) {
       case 'INITIAL': return {

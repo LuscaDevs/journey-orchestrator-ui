@@ -38,7 +38,8 @@ export const toJourneyDefinition = (
     metadata: {
       createdAt: existingDefinition?.metadata.createdAt || now,
       updatedAt: now
-    }
+    },
+    status: existingDefinition?.status || 'draft'
   };
 };
 

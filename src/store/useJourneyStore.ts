@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { Node, Edge } from 'reactflow';
+import { useJourneyDefinitionStore } from './useJourneyDefinitionStore';
 
 // Enhanced node data structure
 export interface NodeData {
@@ -40,9 +41,11 @@ export const useJourneyStore = create<JourneyState & JourneyActions>((set, get) 
   selectedEdge: null,
 
   addNode: (name = 'Novo Estado', nodeType: 'INITIAL' | 'INTERMEDIATE' | 'FINAL' = 'INTERMEDIATE') => {
-    // Check for existing initial or final states
+    // Check for existing initial or final states in canvas state
+    const { canvasNodes, canvasEdges, updateCanvasState } = useJourneyDefinitionStore.getState();
+    
     if (nodeType === 'INITIAL') {
-      const existingInitial = get().nodes.some(node => node.data.type === 'INITIAL');
+      const existingInitial = canvasNodes.some((node: Node<NodeData>) => node.data.type === 'INITIAL');
       if (existingInitial) {
         console.warn('Já existe um estado inicial. Apenas um estado inicial é permitido.');
         return;
@@ -50,7 +53,7 @@ export const useJourneyStore = create<JourneyState & JourneyActions>((set, get) 
     }
 
     if (nodeType === 'FINAL') {
-      const existingFinal = get().nodes.some(node => node.data.type === 'FINAL');
+      const existingFinal = canvasNodes.some((node: Node<NodeData>) => node.data.type === 'FINAL');
       if (existingFinal) {
         console.warn('Já existe um estado final. Apenas um estado final é permitido.');
         return;
@@ -70,24 +73,37 @@ export const useJourneyStore = create<JourneyState & JourneyActions>((set, get) 
       },
     };
 
+    // Update local state
     set((state) => ({
       nodes: [...state.nodes, newNode],
     }));
+
+    // Update JourneyDefinition store canvas state
+    updateCanvasState([...canvasNodes, newNode], canvasEdges);
   },
 
   removeNode: (nodeId: string) => {
+    // Update JourneyDefinition store canvas state
+    const { canvasNodes, canvasEdges, updateCanvasState } = useJourneyDefinitionStore.getState();
+    const filteredNodes = canvasNodes.filter((node) => node.id !== nodeId);
+    const filteredEdges = canvasEdges.filter(
+      (edge) => edge.source !== nodeId && edge.target !== nodeId
+    );
+    updateCanvasState(filteredNodes, filteredEdges);
+
+    // Update local state
     set((state) => {
-      const filteredNodes = state.nodes.filter((node) => node.id !== nodeId);
-      const filteredEdges = state.edges.filter(
+      const localFilteredNodes = state.nodes.filter((node) => node.id !== nodeId);
+      const localFilteredEdges = state.edges.filter(
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       );
       
       return {
-        nodes: filteredNodes,
-        edges: filteredEdges,
+        nodes: localFilteredNodes,
+        edges: localFilteredEdges,
         selectedNode: state.selectedNode === nodeId ? null : state.selectedNode,
         selectedEdge: state.selectedEdge && 
-          filteredEdges.some(edge => edge.id === state.selectedEdge) 
+          localFilteredEdges.some(edge => edge.id === state.selectedEdge) 
           ? state.selectedEdge 
           : null,
       };
@@ -105,12 +121,23 @@ export const useJourneyStore = create<JourneyState & JourneyActions>((set, get) 
       },
     };
 
+    // Update JourneyDefinition store canvas state
+    const { canvasNodes, canvasEdges, updateCanvasState } = useJourneyDefinitionStore.getState();
+    updateCanvasState(canvasNodes, [...canvasEdges, newEdge]);
+
+    // Update local state
     set((state) => ({
       edges: [...state.edges, newEdge],
     }));
   },
 
   removeEdge: (edgeId: string) => {
+    // Update JourneyDefinition store canvas state
+    const { canvasNodes, canvasEdges, updateCanvasState } = useJourneyDefinitionStore.getState();
+    const filteredEdges = canvasEdges.filter((edge) => edge.id !== edgeId);
+    updateCanvasState(canvasNodes, filteredEdges);
+
+    // Update local state
     set((state) => ({
       edges: state.edges.filter((edge) => edge.id !== edgeId),
       selectedEdge: state.selectedEdge === edgeId ? null : state.selectedEdge,
@@ -135,6 +162,16 @@ export const useJourneyStore = create<JourneyState & JourneyActions>((set, get) 
   },
 
   updateNodeName: (nodeId: string, newName: string) => {
+    // Update JourneyDefinition store canvas state
+    const { canvasNodes, canvasEdges, updateCanvasState } = useJourneyDefinitionStore.getState();
+    const updatedNodes = canvasNodes.map((node) =>
+      node.id === nodeId
+        ? { ...node, data: { ...node.data, name: newName } }
+        : node
+    );
+    updateCanvasState(updatedNodes, canvasEdges);
+
+    // Update local state
     set((state) => ({
       nodes: state.nodes.map((node) =>
         node.id === nodeId

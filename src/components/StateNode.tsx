@@ -115,18 +115,20 @@ const StateNode: React.FC<NodeProps<NodeData>> = ({ data, selected, id }) => {
       }}
       onDoubleClick={handleDoubleClick}
     >
-      {/* Handle de entrada */}
-      <Handle
-        type="target"
-        position={Position.Left}
-        style={{
-          background: colors.handle,
-          width: '12px',
-          height: '12px',
-          border: '2px solid oklch(0.118 0 0)',
-          borderRadius: '50%',
-        }}
-      />
+      {/* Handle de entrada (apenas para INTERMEDIATE e FINAL) */}
+      {data.type !== 'INITIAL' && (
+        <Handle
+          type="target"
+          position={Position.Left}
+          style={{
+            background: colors.handle,
+            width: '12px',
+            height: '12px',
+            border: '2px solid oklch(0.118 0 0)',
+            borderRadius: '50%',
+          }}
+        />
+      )}
       
       {/* Conteúdo central */}
       {isEditing ? (
@@ -163,18 +165,20 @@ const StateNode: React.FC<NodeProps<NodeData>> = ({ data, selected, id }) => {
         </div>
       )}
       
-      {/* Handle de saída */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        style={{
-          background: colors.handle,
-          width: '12px',
-          height: '12px',
-          border: '2px solid oklch(0.118 0 0)',
-          borderRadius: '50%',
-        }}
-      />
+      {/* Handle de saída (apenas para INTERMEDIATE e FINAL) */}
+      {data.type !== 'FINAL' && (
+        <Handle
+          type="source"
+          position={Position.Right}
+          style={{
+            background: colors.handle,
+            width: '12px',
+            height: '12px',
+            border: '2px solid oklch(0.118 0 0)',
+            borderRadius: '50%',
+          }}
+        />
+      )}
     </div>
   );
 };

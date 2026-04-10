@@ -1,6 +1,5 @@
 "use client"
 
-import React from "react"
 import { useJourneyDefinitionStore } from "../../store/useJourneyDefinitionStore"
 import { cn } from "../../lib/utils"
 import { Input } from "../ui/Input"
@@ -27,47 +26,44 @@ const stateTypeLabels = {
 
 export function PropertiesPanel({ className }: PropertiesPanelProps) {
   const {
-    currentDefinition,
-    getNodes,
-    getEdges,
+    getSelectedNode,
+    getSelectedEdge,
+    setSelectedNode,
+    setSelectedEdge,
     updateNodeName,
     removeNode,
     removeEdge,
+    getNodes,
+    getEdges,
   } = useJourneyDefinitionStore()
 
+  const selectedNode = getSelectedNode()
+  const selectedEdge = getSelectedEdge()
   const nodes = getNodes()
   const edges = getEdges()
 
-  // For now, we'll use a simple selection mechanism
-  // In a real implementation, this would come from React Flow selection state
-  const [selectedNodeId, setSelectedNodeId] = React.useState<string | null>(null)
-  const [selectedEdgeId, setSelectedEdgeId] = React.useState<string | null>(null)
-
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId)
-  const selectedEdge = edges.find((e) => e.id === selectedEdgeId)
-
   const handleClose = () => {
-    setSelectedNodeId(null)
-    setSelectedEdgeId(null)
+    setSelectedNode(null)
+    setSelectedEdge(null)
   }
 
   const handleNodeNameChange = (newName: string) => {
-    if (selectedNodeId && newName.trim()) {
-      updateNodeName(selectedNodeId, newName.trim())
+    if (selectedNode && newName.trim()) {
+      updateNodeName(selectedNode.id, newName.trim())
     }
   }
 
   const handleDeleteNode = () => {
-    if (selectedNodeId) {
-      removeNode(selectedNodeId)
-      setSelectedNodeId(null)
+    if (selectedNode) {
+      removeNode(selectedNode.id)
+      setSelectedNode(null)
     }
   }
 
   const handleDeleteEdge = () => {
-    if (selectedEdgeId) {
-      removeEdge(selectedEdgeId)
-      setSelectedEdgeId(null)
+    if (selectedEdge) {
+      removeEdge(selectedEdge.id)
+      setSelectedEdge(null)
     }
   }
 
@@ -123,51 +119,48 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
       <div className="flex-1 overflow-y-auto p-4">
         {selectedNode && (
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="node-name" className="text-xs font-medium text-muted-foreground">
-                Nome do Estado
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="node-name">Nome do Estado</Label>
               <Input
                 id="node-name"
                 value={selectedNode.data.name}
                 onChange={(e) => handleNodeNameChange(e.target.value)}
-                className="mt-1"
+                placeholder="Nome do estado"
               />
             </div>
 
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground">
-                Tipo de Estado
-              </Label>
-              <div className="mt-1 flex items-center gap-2 rounded-md border border-border p-2 bg-muted">
-                {(() => {
-                  const Icon = stateTypeLabels[selectedNode.data.type as keyof typeof stateTypeLabels].icon
-                  return (
-                    <>
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-foreground">
-                        {stateTypeLabels[selectedNode.data.type as keyof typeof stateTypeLabels].label}
-                      </span>
-                    </>
-                  )
-                })()}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="node-type">Tipo</Label>
+              <Select
+                value={selectedNode.data.type}
+                disabled
+              >
+                <SelectTrigger id="node-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(stateTypeLabels).map(([type, { label, icon: Icon }]) => (
+                    <SelectItem key={type} value={type}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-3 w-3" />
+                        {label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground">
-                ID do Nó
-              </Label>
-              <div className="mt-1 font-mono text-xs text-muted-foreground bg-muted p-2 rounded">
+            <div className="space-y-2">
+              <Label>ID do Nó</Label>
+              <div className="font-mono text-xs text-muted-foreground bg-muted p-2 rounded">
                 {selectedNode.id}
               </div>
             </div>
 
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground">
-                Posição
-              </Label>
-              <div className="mt-1 grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <Label>Posição</Label>
+              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs text-muted-foreground">X</Label>
                   <Input
@@ -203,32 +196,36 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
 
         {selectedEdge && (
           <div className="space-y-4">
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground">
-                Transição
-              </Label>
-              <div className="mt-1 font-mono text-xs text-muted-foreground bg-muted p-2 rounded">
-                {selectedEdge.source} -&gt; {selectedEdge.target}
+            {/* Connection info */}
+            <div className="rounded-lg bg-muted/50 p-3">
+              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Conexão
+              </p>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-foreground">
+                  {nodes.find((n) => n.id === selectedEdge.source)?.data?.name || "?"}
+                </span>
+                <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                <span className="text-foreground">
+                  {nodes.find((n) => n.id === selectedEdge.target)?.data?.name || "?"}
+                </span>
               </div>
             </div>
 
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground">
-                ID da Transição
-              </Label>
-              <div className="mt-1 font-mono text-xs text-muted-foreground bg-muted p-2 rounded">
+            <div className="space-y-2">
+              <Label htmlFor="edge-id">ID da Transição</Label>
+              <div className="font-mono text-xs text-muted-foreground bg-muted p-2 rounded">
                 {selectedEdge.id}
               </div>
             </div>
 
-            <div>
-              <Label className="text-xs font-medium text-muted-foreground">
-                Evento
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="edge-event">Evento</Label>
               <Input
+                id="edge-event"
                 value={selectedEdge.data?.event || 'transition'}
                 readOnly
-                className="mt-1"
+                placeholder="Nome do evento"
               />
             </div>
 

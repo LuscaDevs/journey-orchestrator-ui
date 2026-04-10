@@ -10,6 +10,8 @@ interface JourneyDefinitionState {
   definitions: JourneyDefinition[];
   hasUnsavedChanges: boolean;
   isInitializing: boolean; // Flag to prevent updates during initialization
+  selectedNodeId: string | null;
+  selectedEdgeId: string | null;
 }
 
 interface JourneyDefinitionActions {
@@ -25,8 +27,8 @@ interface JourneyDefinitionActions {
   // Derived state helpers
   getNodes: () => Node[];
   getEdges: () => Edge[];
-  getSelectedNode: () => string | null;
-  getSelectedEdge: () => string | null;
+  getSelectedNode: () => Node | null;
+  getSelectedEdge: () => Edge | null;
   setSelectedNode: (nodeId: string | null) => void;
   setSelectedEdge: (edgeId: string | null) => void;
   addNode: (name?: string, nodeType?: 'INITIAL' | 'INTERMEDIATE' | 'FINAL') => void;
@@ -42,6 +44,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   definitions: [],
   hasUnsavedChanges: false,
   isInitializing: false,
+  selectedNodeId: null,
+  selectedEdgeId: null,
 
   setCurrentDefinition: (definition) => {
     set({ 
@@ -141,9 +145,26 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       return false;
     }
     
-    // Deep comparison of current vs initial state
-    const currentStr = JSON.stringify(currentDefinition);
-    const initialStr = JSON.stringify(initialDefinition);
+    // Create copies for comparison without metadata that might change on selection
+    const currentCopy = {
+      ...currentDefinition,
+      metadata: {
+        ...currentDefinition.metadata,
+        updatedAt: initialDefinition.metadata.updatedAt // Ignore updatedAt differences
+      }
+    };
+    
+    const initialCopy = {
+      ...initialDefinition,
+      metadata: {
+        ...initialDefinition.metadata,
+        updatedAt: initialDefinition.metadata.updatedAt
+      }
+    };
+    
+    // Deep comparison ignoring selection-related changes
+    const currentStr = JSON.stringify(currentCopy);
+    const initialStr = JSON.stringify(initialCopy);
     const hasChanges = currentStr !== initialStr;
     
     console.log('hasActualChanges result:', hasChanges);
@@ -177,7 +198,21 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       false // Don't increment version for canvas updates
     );
 
-    console.log('updateCurrentDefinition: updating store');
+    // Check if this is just a selection change by comparing nodes/edges content
+    const currentNodes = currentDefinition.nodes;
+    const currentEdges = currentDefinition.edges;
+    const newNodes = updatedDefinition.nodes;
+    const newEdges = updatedDefinition.edges;
+    
+    const nodesEqual = JSON.stringify(currentNodes) === JSON.stringify(newNodes);
+    const edgesEqual = JSON.stringify(currentEdges) === JSON.stringify(newEdges);
+    
+    if (nodesEqual && edgesEqual) {
+      console.log('updateCurrentDefinition: skipping - only selection changed');
+      return;
+    }
+
+    console.log('updateCurrentDefinition: updating store - actual content changed');
     set((state) => ({
       currentDefinition: updatedDefinition,
       hasUnsavedChanges: true // Will be checked properly on exit
@@ -223,23 +258,25 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   },
 
   getSelectedNode: () => {
-    // This would need to be tracked in currentDefinition metadata or separate state
-    return null; // Simplified for now
+    const { selectedNodeId, getNodes } = get();
+    if (!selectedNodeId) return null;
+    const nodes = getNodes();
+    return nodes.find(node => node.id === selectedNodeId) || null;
   },
 
   getSelectedEdge: () => {
-    // This would need to be tracked in currentDefinition metadata or separate state
-    return null; // Simplified for now
+    const { selectedEdgeId, getEdges } = get();
+    if (!selectedEdgeId) return null;
+    const edges = getEdges();
+    return edges.find(edge => edge.id === selectedEdgeId) || null;
   },
 
   setSelectedNode: (nodeId) => {
-    // Store selection in currentDefinition metadata or separate state
-    // Simplified for now
+    set({ selectedNodeId: nodeId, selectedEdgeId: null });
   },
 
   setSelectedEdge: (edgeId) => {
-    // Store selection in currentDefinition metadata or separate state
-    // Simplified for now
+    set({ selectedEdgeId: edgeId, selectedNodeId: null });
   },
 
   addNode: (name = 'Novo Estado', nodeType: 'INITIAL' | 'INTERMEDIATE' | 'FINAL' = 'INTERMEDIATE') => {

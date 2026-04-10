@@ -81,6 +81,8 @@ export function CanvasArea({ className }: CanvasAreaProps) {
     addNode: addStoreNode,
     addEdge: addStoreEdge,
     updateCurrentDefinition,
+    setSelectedNode,
+    setSelectedEdge,
   } = useJourneyDefinitionStore()
 
   // Initialize with store data
@@ -97,8 +99,12 @@ export function CanvasArea({ className }: CanvasAreaProps) {
   // Track if component has been initialized
   const isInitialized = useRef(false)
 
-  // Sync with store when nodes/edges change
+  // Sync with store when nodes/edges change (from canvas interactions)
   useEffect(() => {
+    if (!isInitialized.current) {
+      isInitialized.current = true
+      return // Skip on initial load
+    }
     updateCurrentDefinition(nodes, edges)
   }, [nodes, edges, updateCurrentDefinition])
 
@@ -106,8 +112,22 @@ export function CanvasArea({ className }: CanvasAreaProps) {
   const prevStoreNodesRef = useRef<Node[]>(initialNodes)
   const prevStoreEdgesRef = useRef<Edge[]>(initialEdges)
 
-  // Remove automatic store-to-reactflow sync to prevent overwriting user edits
-  // The store will be updated when React Flow state changes, but we won't sync back
+  // Sync store changes back to React Flow (for Properties Panel edits)
+  useEffect(() => {
+    const storeNodes = getStoreNodes()
+    const storeEdges = getStoreEdges()
+    
+    const nodesChanged = JSON.stringify(prevStoreNodesRef.current) !== JSON.stringify(storeNodes)
+    const edgesChanged = JSON.stringify(prevStoreEdgesRef.current) !== JSON.stringify(storeEdges)
+
+    if (nodesChanged || edgesChanged) {
+      console.log('CanvasArea: Syncing store changes to React Flow')
+      setNodes(storeNodes)
+      setEdges(storeEdges)
+      prevStoreNodesRef.current = storeNodes
+      prevStoreEdgesRef.current = storeEdges
+    }
+  }, [getStoreNodes, getStoreEdges, setNodes, setEdges])
 
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -152,6 +172,28 @@ export function CanvasArea({ className }: CanvasAreaProps) {
     event.preventDefault()
     event.dataTransfer.dropEffect = 'move'
   }, [])
+
+  // Handle node selection
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      setSelectedNode(node.id)
+    },
+    [setSelectedNode]
+  )
+
+  // Handle edge selection
+  const onEdgeClick = useCallback(
+    (_: React.MouseEvent, edge: Edge) => {
+      setSelectedEdge(edge.id)
+    },
+    [setSelectedEdge]
+  )
+
+  // Handle canvas click (deselect)
+  const onPaneClick = useCallback(() => {
+    setSelectedNode(null)
+    setSelectedEdge(null)
+  }, [setSelectedNode, setSelectedEdge])
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -203,6 +245,9 @@ export function CanvasArea({ className }: CanvasAreaProps) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
+        onPaneClick={onPaneClick}
         onDragOver={onDragOver}
         onDrop={onDrop}
         isValidConnection={(connection) => validateConnection(connection, nodes)}

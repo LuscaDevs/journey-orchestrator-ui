@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { JourneyDefinition } from '../types/journey';
 import { toJourneyDefinition, fromJourneyDefinition } from '../utils/journeyConversion';
+import { toApiRequest, fromApiResponse } from '../utils/journeyApiMapper';
+import { createJourneyDefinition, updateJourneyDefinition, deleteJourneyDefinition, listJourneyDefinitions, getJourneyDefinitionById } from '../services/journeyService';
 import type { Node, Edge } from 'reactflow';
 
 interface JourneyDefinitionState {
@@ -12,6 +14,8 @@ interface JourneyDefinitionState {
   isInitializing: boolean; // Flag to prevent updates during initialization
   selectedNodeId: string | null;
   selectedEdgeId: string | null;
+  isLoading: boolean;
+  error: string | null;
 }
 
 interface JourneyDefinitionActions {
@@ -20,9 +24,11 @@ interface JourneyDefinitionActions {
   updateDefinition: (name: string) => void;
   deleteDefinition: (id: string) => void;
   loadDefinition: (definition: JourneyDefinition) => void;
+  loadDefinitionsFromAPI: () => Promise<void>;
   updateCurrentDefinition: (nodes: Node[], edges: Edge[]) => void;
   saveCurrentDefinition: () => void;
   discardChanges: () => void;
+  clearError: () => void;
   hasActualChanges: () => boolean;
   // Derived state helpers
   getNodes: () => Node[];
@@ -48,6 +54,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   isInitializing: false,
   selectedNodeId: null,
   selectedEdgeId: null,
+  isLoading: false,
+  error: null,
 
   setCurrentDefinition: (definition) => {
     set({ 
@@ -56,66 +64,124 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     });
   },
 
-  createDefinition: (name) => {
-    const newDefinition: JourneyDefinition = {
-      id: uuidv4(),
-      name,
-      version: 1,
-      nodes: [],
-      edges: [],
-      metadata: {
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      status: 'draft'
-    };
+  createDefinition: async (name) => {
+    set({ isLoading: true, error: null });
+    try {
+      const newDefinition: JourneyDefinition = {
+        id: uuidv4(),
+        name,
+        version: 1,
+        nodes: [],
+        edges: [],
+        metadata: {
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        status: 'draft'
+      };
 
-    set((state) => ({
-      currentDefinition: newDefinition,
-      hasUnsavedChanges: true // Mark as unsaved since it's not in the list yet
-    }));
+      set((state) => ({
+        currentDefinition: newDefinition,
+        hasUnsavedChanges: true, // Mark as unsaved since it's not persisted yet
+        isLoading: false
+      }));
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to create definition',
+        isLoading: false 
+      });
+    }
   },
 
-  updateDefinition: (name) => {
+  updateDefinition: async (name) => {
     const { currentDefinition, definitions } = get();
     if (!currentDefinition) return;
 
-    // Get current nodes and edges from currentDefinition
-    const { nodes, edges } = fromJourneyDefinition(currentDefinition);
+    set({ isLoading: true, error: null });
+    try {
+      // Get current nodes and edges from currentDefinition
+      const { nodes, edges } = fromJourneyDefinition(currentDefinition);
 
-    // Check if this is the first time saving (not in definitions list yet)
-    const isNewDefinition = !definitions.some(def => def.id === currentDefinition.id);
-    
-    const updatedDefinition = toJourneyDefinition(
-      nodes,
-      edges,
-      name,
-      currentDefinition,
-      !isNewDefinition // Only increment version if it's not a new definition
-    );
+      // Check if this is the first time saving (not in definitions list yet)
+      const isNewDefinition = !definitions.some(def => def.id === currentDefinition.id);
+      
+      const updatedDefinition = toJourneyDefinition(
+        nodes,
+        edges,
+        name,
+        currentDefinition,
+        !isNewDefinition // Only increment version if it's not a new definition
+      );
 
-    set((state) => ({
-      definitions: isNewDefinition 
-        ? [...state.definitions, updatedDefinition] // Add to list if new
-        : state.definitions.map(def => // Update existing if not new
-            def.id === updatedDefinition.id ? updatedDefinition : def
-          ),
-      currentDefinition: updatedDefinition,
-      hasUnsavedChanges: false
-    }));
+      // Convert to API request and call API
+      const apiRequest = toApiRequest(updatedDefinition);
+      const apiResponse = isNewDefinition 
+        ? await createJourneyDefinition(apiRequest)
+        : await updateJourneyDefinition(apiRequest);
+
+      // Convert API response back to domain model
+      const persistedDefinition = fromApiResponse(apiResponse);
+
+      set((state) => ({
+        definitions: isNewDefinition 
+          ? [...state.definitions, persistedDefinition] // Add to list if new
+          : state.definitions.map(def => // Update existing if not new
+              def.id === persistedDefinition.id ? persistedDefinition : def
+            ),
+        currentDefinition: persistedDefinition,
+        initialDefinition: JSON.parse(JSON.stringify(persistedDefinition)),
+        hasUnsavedChanges: false,
+        isLoading: false
+      }));
+    } catch (error: any) {
+      // Extract error message from API response if available
+      let errorMessage = 'Failed to update definition';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      set({ 
+        error: errorMessage,
+        isLoading: false 
+      });
+    }
   },
 
-  deleteDefinition: (id) => {
-    set((state) => {
-      const newDefinitions = state.definitions.filter(def => def.id !== id);
-      const shouldClearCurrent = state.currentDefinition?.id === id;
+  deleteDefinition: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await deleteJourneyDefinition(id);
+      set((state) => {
+        const newDefinitions = state.definitions.filter(def => def.id !== id);
+        const shouldClearCurrent = state.currentDefinition?.id === id;
+        
+        return {
+          definitions: newDefinitions,
+          currentDefinition: shouldClearCurrent ? null : state.currentDefinition,
+          hasUnsavedChanges: false,
+          isLoading: false
+        };
+      });
+    } catch (error: any) {
+      // Extract error message from API response if available
+      let errorMessage = 'Failed to delete definition';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       
-      return {
-        definitions: newDefinitions,
-        currentDefinition: shouldClearCurrent ? null : state.currentDefinition,
-        hasUnsavedChanges: false
-      };
-    });
+      set({ 
+        error: errorMessage,
+        isLoading: false 
+      });
+    }
   },
 
   loadDefinition: (definition) => {
@@ -130,6 +196,24 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     setTimeout(() => {
       set({ isInitializing: false });
     }, 100);
+  },
+
+  loadDefinitionsFromAPI: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const apiResponses = await listJourneyDefinitions();
+      const definitions = apiResponses.map(fromApiResponse);
+      
+      set({
+        definitions,
+        isLoading: false
+      });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to load definitions',
+        isLoading: false 
+      });
+    }
   },
 
   // Function to check if there are actual changes
@@ -210,28 +294,50 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       edges,
       currentDefinition.name,
       currentDefinition,
-      false // Don't increment version for canvas updates
+      false // Don't increment version on real-time updates
     );
 
-    console.log('updateCurrentDefinition: updating store - actual content changed');
-    set((state) => ({
+    set({
       currentDefinition: updatedDefinition,
-      hasUnsavedChanges: true // Will be checked properly on exit
-    }));
+      hasUnsavedChanges: true
+    });
   },
 
-  saveCurrentDefinition: () => {
-    const { currentDefinition, definitions } = get();
+  saveCurrentDefinition: async () => {
+    const { currentDefinition } = get();
     if (!currentDefinition) return;
 
-    set((state) => ({
-      definitions: state.definitions.some(def => def.id === currentDefinition.id)
-        ? state.definitions.map(def => def.id === currentDefinition.id ? currentDefinition : def)
-        : [...state.definitions, currentDefinition],
-      currentDefinition: currentDefinition,
-      initialDefinition: JSON.parse(JSON.stringify(currentDefinition)), // Update initialDefinition to match saved state
-      hasUnsavedChanges: false
-    }));
+    set({ isLoading: true, error: null });
+    try {
+      const apiRequest = toApiRequest(currentDefinition);
+      const apiResponse = await updateJourneyDefinition(apiRequest);
+      const persistedDefinition = fromApiResponse(apiResponse);
+
+      set((state) => ({
+        definitions: state.definitions.some(def => def.id === persistedDefinition.id)
+          ? state.definitions.map(def => def.id === persistedDefinition.id ? persistedDefinition : def)
+          : [...state.definitions, persistedDefinition],
+        currentDefinition: persistedDefinition,
+        initialDefinition: JSON.parse(JSON.stringify(persistedDefinition)),
+        hasUnsavedChanges: false,
+        isLoading: false
+      }));
+    } catch (error: any) {
+      // Extract error message from API response if available
+      let errorMessage = 'Failed to save definition';
+      if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      set({ 
+        error: errorMessage,
+        isLoading: false 
+      });
+    }
   },
 
   discardChanges: () => {
@@ -245,6 +351,10 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         hasUnsavedChanges: false
       });
     }
+  },
+
+  clearError: () => {
+    set({ error: null });
   },
 
   // Derived state helpers

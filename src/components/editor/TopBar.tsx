@@ -11,6 +11,8 @@ import {
   Upload,
   MoreHorizontal,
   Circle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -22,21 +24,47 @@ import {
 
 export function TopBar() {
   const navigate = useNavigate()
-  const { 
-    currentDefinition, 
-    hasUnsavedChanges, 
+  const {
+    currentDefinition,
+    hasUnsavedChanges,
     hasActualChanges,
-    updateDefinition, 
+    updateDefinition,
     deleteDefinition,
     discardChanges,
-    saveCurrentDefinition
+    saveCurrentDefinition,
+    error,
+    isLoading,
+    clearError
   } = useJourneyDefinitionStore()
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (currentDefinition?.name) {
-      saveCurrentDefinition()
+      await saveCurrentDefinition()
     }
   }
+
+  const getErrorMessage = (error: string | null) => {
+    if (!error) return null
+    
+    // Map backend error messages to user-friendly messages
+    if (error.includes('No INITIAL state defined')) {
+      return 'A journey deve ter um estado inicial. Adicione um estado do tipo "INITIAL" antes de salvar.'
+    }
+    if (error.includes('No FINAL state defined') || error.includes('must have at least one FINAL state')) {
+      return 'A journey deve ter um estado final. Adicione um estado do tipo "FINAL" antes de salvar.'
+    }
+    if (error.includes('Source state') && error.includes('not found')) {
+      return 'Estado de origem não encontrado na transição. Verifique as conexões entre estados.'
+    }
+    if (error.includes('Target state') && error.includes('not found')) {
+      return 'Estado de destino não encontrado na transição. Verifique as conexões entre estados.'
+    }
+    
+    // Default to the original error message if no mapping exists
+    return error
+  }
+
+  const displayError = getErrorMessage(error)
 
   const handlePublish = () => {
     if (currentDefinition?.status === "draft") {
@@ -87,8 +115,34 @@ export function TopBar() {
   if (!currentDefinition) return null
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
-      {/* Left: Back button + Journey info */}
+    <>
+      {/* Error alert - centered popup */}
+      {displayError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="max-w-md rounded-lg border border-destructive/50 bg-card p-6 shadow-lg">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="h-6 w-6 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground mb-1">Erro ao salvar</h3>
+                <p className="text-sm text-muted-foreground">{displayError}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearError}
+                className="gap-2"
+              >
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
+        {/* Left: Back button + Journey info */}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
@@ -171,5 +225,6 @@ export function TopBar() {
         </DropdownMenu>
       </div>
     </header>
+    </>
   )
 }

@@ -1,48 +1,34 @@
-
 # JourneyDefinitionResponse
 
 
 ## Properties
 
-Name | Type
------------- | -------------
-`id` | string
-`journeyCode` | string
-`name` | string
-`version` | number
-`states` | [Array&lt;State&gt;](State.md)
-`transitions` | [Array&lt;TransitionResponse&gt;](TransitionResponse.md)
-`active` | boolean
-`createdAt` | Date
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**id** | **string** |  | [optional] [default to undefined]
+**journeyCode** | **string** |  | [optional] [default to undefined]
+**name** | **string** |  | [optional] [default to undefined]
+**version** | **number** |  | [optional] [default to undefined]
+**states** | [**Array&lt;State&gt;**](State.md) |  | [optional] [default to undefined]
+**transitions** | [**Array&lt;TransitionResponse&gt;**](TransitionResponse.md) |  | [optional] [default to undefined]
+**active** | **boolean** |  | [optional] [default to undefined]
+**createdAt** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import type { JourneyDefinitionResponse } from ''
+import { JourneyDefinitionResponse } from './api';
 
-// TODO: Update the object below with actual values
-const example = {
-  "id": null,
-  "journeyCode": null,
-  "name": null,
-  "version": null,
-  "states": null,
-  "transitions": null,
-  "active": null,
-  "createdAt": null,
-} satisfies JourneyDefinitionResponse
-
-console.log(example)
-
-// Convert the instance to a JSON string
-const exampleJSON: string = JSON.stringify(example)
-console.log(exampleJSON)
-
-// Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as JourneyDefinitionResponse
-console.log(exampleParsed)
+const instance: JourneyDefinitionResponse = {
+    id,
+    journeyCode,
+    name,
+    version,
+    states,
+    transitions,
+    active,
+    createdAt,
+};
 ```
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

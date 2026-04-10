@@ -1,36 +1,22 @@
-
 # EventInfo
 
 
 ## Properties
 
-Name | Type
------------- | -------------
-`type` | string
-`data` | { [key: string]: any; }
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**type** | **string** | Type of the event that triggered the transition | [default to undefined]
+**data** | **{ [key: string]: any; }** | Event-specific data | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import type { EventInfo } from ''
+import { EventInfo } from './api';
 
-// TODO: Update the object below with actual values
-const example = {
-  "type": null,
-  "data": null,
-} satisfies EventInfo
-
-console.log(example)
-
-// Convert the instance to a JSON string
-const exampleJSON: string = JSON.stringify(example)
-console.log(exampleJSON)
-
-// Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as EventInfo
-console.log(exampleParsed)
+const instance: EventInfo = {
+    type,
+    data,
+};
 ```
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

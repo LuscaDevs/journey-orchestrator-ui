@@ -1,40 +1,30 @@
-
 # TransitionRequest
 
 
 ## Properties
 
-Name | Type
------------- | -------------
-`source` | string
-`event` | string
-`target` | string
-`condition` | string
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**source** | **string** | Source state reference by name (legacy) | [default to undefined]
+**target** | **string** | Target state reference by name (legacy) | [default to undefined]
+**sourceStateId** | **string** | Source state reference by ID (new, preferred). Takes precedence if both source and sourceStateId are provided. | [optional] [default to undefined]
+**targetStateId** | **string** | Target state reference by ID (new, preferred). Takes precedence if both target and targetStateId are provided. | [optional] [default to undefined]
+**event** | **string** |  | [default to undefined]
+**condition** | **string** | Optional SpEL expression for conditional transitions | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import type { TransitionRequest } from ''
+import { TransitionRequest } from './api';
 
-// TODO: Update the object below with actual values
-const example = {
-  "source": null,
-  "event": null,
-  "target": null,
-  "condition": #eventData.amount > 1000 AND #eventData.priority == 'HIGH',
-} satisfies TransitionRequest
-
-console.log(example)
-
-// Convert the instance to a JSON string
-const exampleJSON: string = JSON.stringify(example)
-console.log(exampleJSON)
-
-// Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as TransitionRequest
-console.log(exampleParsed)
+const instance: TransitionRequest = {
+    source,
+    target,
+    sourceStateId,
+    targetStateId,
+    event,
+    condition,
+};
 ```
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

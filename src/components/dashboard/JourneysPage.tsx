@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useNavigate } from 'react-router-dom'
-import { PlusCircle, Search, ChevronDown, GitBranch, Globe, FileText, Activity } from "lucide-react"
+import { PlusCircle, Search, ChevronDown, GitBranch, Globe, FileText, Activity, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "../ui/Button"
 import { Input } from "../ui/Input"
 import { JourneysTable } from "./JourneyTable"
@@ -14,9 +14,14 @@ type FilterStatus = "all" | JourneyStatus
 
 export function JourneysPage() {
   const navigate = useNavigate()
-  const { definitions, createDefinition, deleteDefinition, loadDefinition, setCurrentDefinition } = useJourneyDefinitionStore()
+  const { definitions, createDefinition, deleteDefinition, loadDefinition, setCurrentDefinition, loadDefinitionsFromAPI, isLoading, error } = useJourneyDefinitionStore()
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all")
+
+  // Load definitions from API on mount
+  useEffect(() => {
+    loadDefinitionsFromAPI()
+  }, [loadDefinitionsFromAPI])
 
   // Convert JourneyDefinitions to Journey format for the table
   const journeys = useMemo(() => {
@@ -163,6 +168,7 @@ export function JourneysPage() {
         </div>
         <Button
           onClick={handleCreateJourney}
+          disabled={isLoading}
           className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-9 text-sm font-medium"
         >
           <PlusCircle className="h-4 w-4" />
@@ -170,74 +176,94 @@ export function JourneysPage() {
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-            <GitBranch className="h-4 w-4 text-primary" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-lg font-semibold text-foreground leading-tight">{journeys.length}</p>
-          </div>
+      {/* Loading state */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12 gap-3 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Carregando journey definitions...</span>
         </div>
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[oklch(0.65_0.18_160/0.1)]">
-            <Globe className="h-4 w-4 text-[oklch(0.65_0.18_160)]" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Publicadas</p>
-            <p className="text-lg font-semibold text-foreground leading-tight">{publishedCount}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[oklch(0.62_0.16_60/0.1)]">
-            <FileText className="h-4 w-4 text-[oklch(0.78_0.14_60)]" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Rascunhos</p>
-            <p className="text-lg font-semibold text-foreground leading-tight">{draftCount}</p>
-          </div>
-        </div>
-      </div>
+      )}
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <Input
-            placeholder="Buscar por nome ou código..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 h-9 text-sm bg-muted border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+      {/* Error state */}
+      {error && (
+        <div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3">
+          <AlertCircle className="h-5 w-5 text-destructive" />
+          <span className="text-sm text-destructive">{error}</span>
+        </div>
+      )}
+
+      {!isLoading && !error && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+                <GitBranch className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-lg font-semibold text-foreground leading-tight">{journeys.length}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[oklch(0.65_0.18_160/0.1)]">
+                <Globe className="h-4 w-4 text-[oklch(0.65_0.18_160)]" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Publicadas</p>
+                <p className="text-lg font-semibold text-foreground leading-tight">{publishedCount}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[oklch(0.62_0.16_60/0.1)]">
+                <FileText className="h-4 w-4 text-[oklch(0.78_0.14_60)]" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Rascunhos</p>
+                <p className="text-lg font-semibold text-foreground leading-tight">{draftCount}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Toolbar */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Buscar por nome ou código..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-9 text-sm bg-muted border-input text-foreground placeholder:text-muted-foreground focus-visible:ring-ring"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
+                className="h-9 text-sm border border-input bg-muted text-foreground px-3 py-1 rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="all">{filterLabel}</option>
+                <option value="published">Publicados</option>
+                <option value="draft">Rascunhos</option>
+              </select>
+            </div>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Table */}
+          <JourneysTable
+            journeys={filtered}
+            onUpdate={handleUpdateJourney}
+            onDelete={handleDeleteJourney}
+            onDuplicate={handleDuplicateJourney}
+            onPublish={handlePublishJourney}
+            onEdit={handleEditJourney}
           />
-        </div>
-        <div className="flex items-center gap-2">
-          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
-            className="h-9 text-sm border border-input bg-muted text-foreground px-3 py-1 rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="all">{filterLabel}</option>
-            <option value="published">Publicados</option>
-            <option value="draft">Rascunhos</option>
-          </select>
-        </div>
-        <span className="text-xs text-muted-foreground ml-auto">
-          {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
-        </span>
-      </div>
-
-      {/* Table */}
-      <JourneysTable
-        journeys={filtered}
-        onUpdate={handleUpdateJourney}
-        onDelete={handleDeleteJourney}
-        onDuplicate={handleDuplicateJourney}
-        onPublish={handlePublishJourney}
-        onEdit={handleEditJourney}
-      />
+        </>
+      )}
     </div>
   )
 }

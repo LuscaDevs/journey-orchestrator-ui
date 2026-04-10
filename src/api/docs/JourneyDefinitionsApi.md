@@ -2,60 +2,46 @@
 
 All URIs are relative to *http://localhost:8080*
 
-| Method | HTTP request | Description |
+|Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-| [**createJourneyDefinition**](JourneyDefinitionsApi.md#createjourneydefinitionoperation) | **POST** /journeys | Create a new journey definition |
-| [**getJourneyDefinitionsByCode**](JourneyDefinitionsApi.md#getjourneydefinitionsbycode) | **GET** /journeys/{journeyCode} | Get all versions of a journey definition |
-| [**listJourneyDefinitions**](JourneyDefinitionsApi.md#listjourneydefinitions) | **GET** /journeys | List all journey definitions |
+|[**createJourneyDefinition**](#createjourneydefinition) | **POST** /journeys | Create a new journey definition|
+|[**deleteJourneyDefinition**](#deletejourneydefinition) | **DELETE** /journeys/{id} | Delete a journey definition by ID|
+|[**getJourneyDefinitionsByCode**](#getjourneydefinitionsbycode) | **GET** /journeys/{journeyCode} | Get all versions of a journey definition|
+|[**listJourneyDefinitions**](#listjourneydefinitions) | **GET** /journeys | List all journey definitions|
 
-
-
-## createJourneyDefinition
-
+# **createJourneyDefinition**
 > JourneyDefinitionResponse createJourneyDefinition(createJourneyDefinitionRequest)
 
-Create a new journey definition
 
 ### Example
 
-```ts
+```typescript
 import {
-  Configuration,
-  JourneyDefinitionsApi,
-} from '';
-import type { CreateJourneyDefinitionOperationRequest } from '';
+    JourneyDefinitionsApi,
+    Configuration,
+    CreateJourneyDefinitionRequest
+} from './api';
 
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new JourneyDefinitionsApi();
+const configuration = new Configuration();
+const apiInstance = new JourneyDefinitionsApi(configuration);
 
-  const body = {
-    // CreateJourneyDefinitionRequest
-    createJourneyDefinitionRequest: ...,
-  } satisfies CreateJourneyDefinitionOperationRequest;
+let createJourneyDefinitionRequest: CreateJourneyDefinitionRequest; //
 
-  try {
-    const data = await api.createJourneyDefinition(body);
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
+const { status, data } = await apiInstance.createJourneyDefinition(
+    createJourneyDefinitionRequest
+);
 ```
 
 ### Parameters
 
-
-| Name | Type | Description  | Notes |
+|Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **createJourneyDefinitionRequest** | [CreateJourneyDefinitionRequest](CreateJourneyDefinitionRequest.md) |  | |
+| **createJourneyDefinitionRequest** | **CreateJourneyDefinitionRequest**|  | |
+
 
 ### Return type
 
-[**JourneyDefinitionResponse**](JourneyDefinitionResponse.md)
+**JourneyDefinitionResponse**
 
 ### Authorization
 
@@ -63,64 +49,49 @@ No authorization required
 
 ### HTTP request headers
 
-- **Content-Type**: `application/json`
-- **Accept**: `application/json`
+ - **Content-Type**: application/json
+ - **Accept**: application/json
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **201** | Journey definition created |  -  |
+|**201** | Journey definition created |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **deleteJourneyDefinition**
+> deleteJourneyDefinition()
 
-## getJourneyDefinitionsByCode
-
-> Array&lt;JourneyDefinitionResponse&gt; getJourneyDefinitionsByCode(journeyCode)
-
-Get all versions of a journey definition
 
 ### Example
 
-```ts
+```typescript
 import {
-  Configuration,
-  JourneyDefinitionsApi,
-} from '';
-import type { GetJourneyDefinitionsByCodeRequest } from '';
+    JourneyDefinitionsApi,
+    Configuration
+} from './api';
 
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new JourneyDefinitionsApi();
+const configuration = new Configuration();
+const apiInstance = new JourneyDefinitionsApi(configuration);
 
-  const body = {
-    // string
-    journeyCode: journeyCode_example,
-  } satisfies GetJourneyDefinitionsByCodeRequest;
+let id: string; // (default to undefined)
 
-  try {
-    const data = await api.getJourneyDefinitionsByCode(body);
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-// Run the test
-example().catch(console.error);
+const { status, data } = await apiInstance.deleteJourneyDefinition(
+    id
+);
 ```
 
 ### Parameters
 
-
-| Name | Type | Description  | Notes |
+|Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **journeyCode** | `string` |  | [Defaults to `undefined`] |
+| **id** | [**string**] |  | defaults to undefined|
+
 
 ### Return type
 
-[**Array&lt;JourneyDefinitionResponse&gt;**](JourneyDefinitionResponse.md)
+void (empty response body)
 
 ### Authorization
 
@@ -128,56 +99,50 @@ No authorization required
 
 ### HTTP request headers
 
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
+ - **Content-Type**: Not defined
+ - **Accept**: Not defined
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | Journey definitions found |  -  |
+|**204** | Journey definition deleted |  -  |
+|**404** | Journey definition not found |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **getJourneyDefinitionsByCode**
+> Array<JourneyDefinitionResponse> getJourneyDefinitionsByCode()
 
-## listJourneyDefinitions
-
-> Array&lt;JourneyDefinitionResponse&gt; listJourneyDefinitions()
-
-List all journey definitions
 
 ### Example
 
-```ts
+```typescript
 import {
-  Configuration,
-  JourneyDefinitionsApi,
-} from '';
-import type { ListJourneyDefinitionsRequest } from '';
+    JourneyDefinitionsApi,
+    Configuration
+} from './api';
 
-async function example() {
-  console.log("🚀 Testing  SDK...");
-  const api = new JourneyDefinitionsApi();
+const configuration = new Configuration();
+const apiInstance = new JourneyDefinitionsApi(configuration);
 
-  try {
-    const data = await api.listJourneyDefinitions();
-    console.log(data);
-  } catch (error) {
-    console.error(error);
-  }
-}
+let journeyCode: string; // (default to undefined)
 
-// Run the test
-example().catch(console.error);
+const { status, data } = await apiInstance.getJourneyDefinitionsByCode(
+    journeyCode
+);
 ```
 
 ### Parameters
 
-This endpoint does not need any parameter.
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **journeyCode** | [**string**] |  | defaults to undefined|
+
 
 ### Return type
 
-[**Array&lt;JourneyDefinitionResponse&gt;**](JourneyDefinitionResponse.md)
+**Array<JourneyDefinitionResponse>**
 
 ### Authorization
 
@@ -185,14 +150,57 @@ No authorization required
 
 ### HTTP request headers
 
-- **Content-Type**: Not defined
-- **Accept**: `application/json`
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
 
 
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-| **200** | List of journey definitions |  -  |
+|**200** | Journey definitions found |  -  |
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **listJourneyDefinitions**
+> Array<JourneyDefinitionResponse> listJourneyDefinitions()
+
+
+### Example
+
+```typescript
+import {
+    JourneyDefinitionsApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new JourneyDefinitionsApi(configuration);
+
+const { status, data } = await apiInstance.listJourneyDefinitions();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**Array<JourneyDefinitionResponse>**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | List of journey definitions |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

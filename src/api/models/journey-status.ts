@@ -14,7 +14,15 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+
+export const JourneyStatus = {
+    Running: 'RUNNING',
+    Completed: 'COMPLETED',
+    Failed: 'FAILED',
+    Cancelled: 'CANCELLED',
+} as const;
+
+export type JourneyStatus = typeof JourneyStatus[keyof typeof JourneyStatus];
+
+
 

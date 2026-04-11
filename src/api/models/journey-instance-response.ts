@@ -13,8 +13,19 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { JourneyStatus } from './journey-status';
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+export interface JourneyInstanceResponse {
+    'instanceId'?: string;
+    'journeyCode'?: string;
+    'version'?: number;
+    'currentState'?: string;
+    'status'?: JourneyStatus;
+    'createdAt'?: string;
+    'updatedAt'?: string;
+}
+
+
 

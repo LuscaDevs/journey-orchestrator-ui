@@ -14,7 +14,14 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+
+export const StateType = {
+    Initial: 'INITIAL',
+    Intermediate: 'INTERMEDIATE',
+    Final: 'FINAL',
+} as const;
+
+export type StateType = typeof StateType[keyof typeof StateType];
+
+
 

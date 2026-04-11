@@ -14,7 +14,17 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+/**
+ * Visual editor position data (optional, for React Flow integration)
+ */
+export interface StatePosition {
+    /**
+     * X coordinate
+     */
+    'x': number;
+    /**
+     * Y coordinate
+     */
+    'y': number;
+}
 

@@ -14,7 +14,9 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+export interface CreateJourneyInstanceRequest {
+    'journeyCode': string;
+    'version': number;
+    'context'?: { [key: string]: any; };
+}
 

@@ -16,6 +16,8 @@ interface JourneyDefinitionState {
   selectedEdgeId: string | null;
   isLoading: boolean;
   error: string | null;
+  success: string | null;
+  isNewJourney: boolean; // Track if this is a newly created journey not yet persisted
 }
 
 interface JourneyDefinitionActions {
@@ -29,6 +31,7 @@ interface JourneyDefinitionActions {
   saveCurrentDefinition: () => void;
   discardChanges: () => void;
   clearError: () => void;
+  clearSuccess: () => void;
   hasActualChanges: () => boolean;
   // Derived state helpers
   getNodes: () => Node[];
@@ -56,6 +59,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   selectedEdgeId: null,
   isLoading: false,
   error: null,
+  success: null,
+  isNewJourney: false,
 
   setCurrentDefinition: (definition) => {
     set({ 
@@ -83,6 +88,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       set((state) => ({
         currentDefinition: newDefinition,
         hasUnsavedChanges: true, // Mark as unsaved since it's not persisted yet
+        isNewJourney: true, // Mark as new journey that needs to be persisted
         isLoading: false
       }));
     } catch (error) {
@@ -117,7 +123,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       const apiRequest = toApiRequest(updatedDefinition);
       const apiResponse = isNewDefinition 
         ? await createJourneyDefinition(apiRequest)
-        : await updateJourneyDefinition(apiRequest);
+        : await updateJourneyDefinition(currentDefinition.id, apiRequest);
 
       // Convert API response back to domain model
       const persistedDefinition = fromApiResponse(apiResponse);
@@ -134,9 +140,11 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         isLoading: false
       }));
     } catch (error: any) {
-      // Extract error message from API response if available
+      // Extract error code and message from API response if available
       let errorMessage = 'Failed to update definition';
-      if (error.response?.data?.detail) {
+      if (error.response?.data?.errorCode) {
+        errorMessage = error.response.data.errorCode;
+      } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -167,9 +175,11 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         };
       });
     } catch (error: any) {
-      // Extract error message from API response if available
+      // Extract error code and message from API response if available
       let errorMessage = 'Failed to delete definition';
-      if (error.response?.data?.detail) {
+      if (error.response?.data?.errorCode) {
+        errorMessage = error.response.data.errorCode;
+      } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -185,11 +195,12 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   },
 
   loadDefinition: (definition) => {
-    set({ 
+    set({
       currentDefinition: definition,
-      initialDefinition: JSON.parse(JSON.stringify(definition)), // Deep copy
+      initialDefinition: JSON.parse(JSON.stringify(definition)),
       hasUnsavedChanges: false,
-      isInitializing: true // Set initialization flag
+      isNewJourney: false, // This is an existing journey, not new
+      isInitializing: true // Set to true to prevent sync changes during load
     });
     
     // Clear initialization flag after a short delay to allow React Flow to settle
@@ -208,9 +219,21 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         definitions,
         isLoading: false
       });
-    } catch (error) {
+    } catch (error: any) {
+      // Extract error code and message from API response if available
+      let errorMessage = 'Failed to load definitions';
+      if (error.response?.data?.errorCode) {
+        errorMessage = error.response.data.errorCode;
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       set({ 
-        error: error instanceof Error ? error.message : 'Failed to load definitions',
+        error: errorMessage,
         isLoading: false 
       });
     }
@@ -304,28 +327,41 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   },
 
   saveCurrentDefinition: async () => {
-    const { currentDefinition } = get();
+    const { currentDefinition, isNewJourney } = get();
     if (!currentDefinition) return;
 
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, success: null });
     try {
       const apiRequest = toApiRequest(currentDefinition);
-      const apiResponse = await updateJourneyDefinition(apiRequest);
+      
+      // Use isNewJourney flag to determine if we should create or update
+      const apiResponse = isNewJourney 
+        ? await createJourneyDefinition(apiRequest)
+        : await updateJourneyDefinition(currentDefinition.id, apiRequest);
+      
       const persistedDefinition = fromApiResponse(apiResponse);
 
       set((state) => ({
-        definitions: state.definitions.some(def => def.id === persistedDefinition.id)
-          ? state.definitions.map(def => def.id === persistedDefinition.id ? persistedDefinition : def)
-          : [...state.definitions, persistedDefinition],
+        definitions: isNewJourney 
+          ? [...state.definitions, persistedDefinition]
+          : state.definitions.map(def => def.id === persistedDefinition.id ? persistedDefinition : def),
         currentDefinition: persistedDefinition,
         initialDefinition: JSON.parse(JSON.stringify(persistedDefinition)),
         hasUnsavedChanges: false,
-        isLoading: false
+        isLoading: false,
+        success: 'Jornada salva com sucesso!',
+        isNewJourney: false // Journey is now persisted
       }));
     } catch (error: any) {
-      // Extract error message from API response if available
+      // Extract error code and message from API response if available
       let errorMessage = 'Failed to save definition';
-      if (error.response?.data?.detail) {
+      if (error.response?.data?.errorCode) {
+        // Include both error code and detail for better error handling
+        errorMessage = error.response.data.errorCode;
+        if (error.response.data.detail) {
+          errorMessage = `${error.response.data.errorCode}|${error.response.data.detail}`;
+        }
+      } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -355,6 +391,10 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
 
   clearError: () => {
     set({ error: null });
+  },
+
+  clearSuccess: () => {
+    set({ success: null });
   },
 
   // Derived state helpers

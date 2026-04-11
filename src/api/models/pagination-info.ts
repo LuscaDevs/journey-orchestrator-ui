@@ -14,7 +14,22 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+export interface PaginationInfo {
+    /**
+     * Number of events returned in this page
+     */
+    'limit'?: number;
+    /**
+     * Number of events skipped
+     */
+    'offset'?: number;
+    /**
+     * Whether there are more events available
+     */
+    'hasNext'?: boolean;
+    /**
+     * Whether there are previous events available
+     */
+    'hasPrevious'?: boolean;
+}
 

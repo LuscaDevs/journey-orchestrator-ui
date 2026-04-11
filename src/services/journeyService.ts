@@ -35,12 +35,11 @@ export const getJourneyDefinitionsByCode = async (journeyCode: string): Promise<
 };
 
 /**
- * Update a journey definition by creating a new version
- * Fallback: Backend doesn't have update endpoint, so we create a new version
+ * Update a journey definition by calling the PUT endpoint
  */
-export const updateJourneyDefinition = async (data: CreateJourneyDefinitionRequest): Promise<JourneyDefinitionResponse> => {
+export const updateJourneyDefinition = async (id: string, data: CreateJourneyDefinitionRequest): Promise<JourneyDefinitionResponse> => {
     try {
-        const response = await api.createJourneyDefinition(data);
+        const response = await api.updateJourneyDefinition(id, data);
         return response.data;
     } catch (error) {
         console.error('Error updating journey definition:', error);

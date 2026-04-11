@@ -14,7 +14,18 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+export interface ErrorResponseError {
+    /**
+     * Error code
+     */
+    'code': string;
+    /**
+     * Human-readable error message
+     */
+    'message': string;
+    /**
+     * Additional error details
+     */
+    'details'?: { [key: string]: any; };
+}
 

@@ -13,8 +13,22 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { StatePosition } from './state-position';
+// May contain unused imports in some cases
+// @ts-ignore
+import type { StateType } from './state-type';
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+export interface State {
+    /**
+     * Unique identifier for the state (UUID v4). Auto-generated if not provided.
+     */
+    'id'?: string;
+    'name': string;
+    'type': StateType;
+    'position'?: StatePosition;
+}
+
+
 

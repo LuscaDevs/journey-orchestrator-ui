@@ -14,7 +14,14 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+export interface EventInfo {
+    /**
+     * Type of the event that triggered the transition
+     */
+    'type': string;
+    /**
+     * Event-specific data
+     */
+    'data'?: { [key: string]: any; };
+}
 

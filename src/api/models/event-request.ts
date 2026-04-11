@@ -14,7 +14,8 @@
 
 
 
-export * from './apis/journey-definitions-api';
-export * from './apis/journey-instance-history-api';
-export * from './apis/journey-instances-api';
+export interface EventRequest {
+    'event': string;
+    'payload'?: { [key: string]: any; };
+}
 

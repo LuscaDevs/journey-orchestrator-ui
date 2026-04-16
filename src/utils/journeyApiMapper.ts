@@ -72,9 +72,6 @@ export const fromApiResponse = (response: JourneyDefinitionResponse): JourneyDef
     condition: transition.condition
   }));
 
-  // Map active boolean to status
-  const status = response.active ? 'published' : 'draft';
-
   return {
     id: response.id || uuidv4(),
     name: response.name || '',
@@ -85,6 +82,6 @@ export const fromApiResponse = (response: JourneyDefinitionResponse): JourneyDef
       createdAt: response.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     },
-    status
+    active: response.active || false
   };
 };

@@ -74,3 +74,42 @@ export const getJourneyDefinitionById = async (id: string): Promise<JourneyDefin
         throw error;
     }
 };
+
+/**
+ * Publish a journey definition by setting active to true
+ */
+export const publishJourneyDefinition = async (id: string): Promise<JourneyDefinitionResponse> => {
+    try {
+        // First get the current definition
+        const currentDefinition = await getJourneyDefinitionById(id);
+        if (!currentDefinition) {
+            throw new Error('Journey definition not found');
+        }
+
+        // Create update request with active set to true
+        const updateRequest: CreateJourneyDefinitionRequest = {
+            journeyCode: currentDefinition.journeyCode || '',
+            name: currentDefinition.name || '',
+            version: currentDefinition.version || 1,
+            states: currentDefinition.states || [],
+            transitions: (currentDefinition.transitions || []).map(transition => ({
+                source: transition.source || '',
+                target: transition.target || '',
+                sourceStateId: transition.sourceStateId,
+                targetStateId: transition.targetStateId,
+                event: transition.event || 'transition',
+                condition: transition.condition
+            }))
+        };
+
+        // Update the definition
+        const response = await api.updateJourneyDefinition(id, updateRequest);
+
+        // The backend should set active to true by default when updating
+        // If not, we might need a specific endpoint for this
+        return response.data;
+    } catch (error) {
+        console.error('Error publishing journey definition:', error);
+        throw error;
+    }
+};

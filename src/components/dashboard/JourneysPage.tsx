@@ -14,7 +14,7 @@ type FilterStatus = "all" | JourneyStatus
 
 export function JourneysPage() {
   const navigate = useNavigate()
-  const { definitions, createDefinition, deleteDefinition, loadDefinition, setCurrentDefinition, loadDefinitionsFromAPI, isLoading, error } = useJourneyDefinitionStore()
+  const { definitions, createDefinition, deleteDefinition, loadDefinition, setCurrentDefinition, loadDefinitionsFromAPI, publishDefinition, isLoading, error } = useJourneyDefinitionStore()
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all")
 
@@ -91,30 +91,8 @@ export function JourneysPage() {
   }
 
   function handlePublishJourney(id: string) {
-    // Find the original JourneyDefinition
-    const definition = definitions.find(def => def.id === id)
-    if (definition) {
-      // Remove "(Cópia)" from name to mark as published
-      const publishedName = definition.name.replace(' (Cópia)', '')
-      const { definitions: currentDefs } = useJourneyDefinitionStore.getState()
-      
-      const updatedDefinition: JourneyDefinition = {
-        ...definition,
-        name: publishedName,
-        version: definition.version + 1,
-        metadata: {
-          ...definition.metadata,
-          updatedAt: new Date().toISOString()
-        }
-      }
-
-      useJourneyDefinitionStore.setState({
-        definitions: currentDefs.map(def => 
-          def.id === id ? updatedDefinition : def
-        ),
-        currentDefinition: updatedDefinition,
-        hasUnsavedChanges: false
-      })
+    if (confirm('Tem certeza que deseja publicar esta jornada? Isso irá ativá-la para uso.')) {
+      publishDefinition(id)
     }
   }
 
@@ -124,7 +102,7 @@ export function JourneysPage() {
     const definition = definitions.find(def => def.id === journey.id)
     if (definition) {
       const { definitions: currentDefs } = useJourneyDefinitionStore.getState()
-      
+
       const updatedDefinition: JourneyDefinition = {
         ...definition,
         name: journey.name,
@@ -135,7 +113,7 @@ export function JourneysPage() {
       }
 
       useJourneyDefinitionStore.setState({
-        definitions: currentDefs.map(def => 
+        definitions: currentDefs.map(def =>
           def.id === journey.id ? updatedDefinition : def
         ),
         currentDefinition: updatedDefinition,
@@ -151,8 +129,8 @@ export function JourneysPage() {
     filterStatus === "all"
       ? "Todos os status"
       : filterStatus === "published"
-      ? "Publicados"
-      : "Rascunhos"
+        ? "Publicados"
+        : "Rascunhos"
 
   return (
     <div className="flex flex-col gap-6">

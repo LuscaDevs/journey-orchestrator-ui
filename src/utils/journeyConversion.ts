@@ -10,7 +10,7 @@ export const toJourneyDefinition = (
   isSavedDefinition?: boolean
 ): JourneyDefinition => {
   const now = new Date().toISOString();
-  
+
   const journeyNodes: JourneyNode[] = nodes.map(node => ({
     id: node.id,
     name: node.data.name,
@@ -39,7 +39,7 @@ export const toJourneyDefinition = (
       createdAt: existingDefinition?.metadata.createdAt || now,
       updatedAt: now
     },
-    status: existingDefinition?.status || 'draft'
+    active: existingDefinition?.active ?? false
   };
 };
 

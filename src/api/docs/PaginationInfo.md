@@ -1,40 +1,26 @@
-
 # PaginationInfo
 
 
 ## Properties
 
-Name | Type
------------- | -------------
-`limit` | number
-`offset` | number
-`hasNext` | boolean
-`hasPrevious` | boolean
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**limit** | **number** | Number of events returned in this page | [optional] [default to undefined]
+**offset** | **number** | Number of events skipped | [optional] [default to undefined]
+**hasNext** | **boolean** | Whether there are more events available | [optional] [default to undefined]
+**hasPrevious** | **boolean** | Whether there are previous events available | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import type { PaginationInfo } from ''
+import { PaginationInfo } from './api';
 
-// TODO: Update the object below with actual values
-const example = {
-  "limit": null,
-  "offset": null,
-  "hasNext": null,
-  "hasPrevious": null,
-} satisfies PaginationInfo
-
-console.log(example)
-
-// Convert the instance to a JSON string
-const exampleJSON: string = JSON.stringify(example)
-console.log(exampleJSON)
-
-// Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as PaginationInfo
-console.log(exampleParsed)
+const instance: PaginationInfo = {
+    limit,
+    offset,
+    hasNext,
+    hasPrevious,
+};
 ```
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

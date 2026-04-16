@@ -29,14 +29,12 @@ export function generateJourneyCode(index: number): string {
 }
 
 export function journeyDefinitionToJourney(definition: JourneyDefinition, index: number): Journey {
-  const isDraft = definition.name.includes('(Cópia)');
-  
   return {
     id: definition.id,
     code: generateJourneyCode(index),
     name: definition.name,
     version: `v${definition.version}.0.0`,
-    status: isDraft ? "draft" : "published" as JourneyStatus,
+    status: definition.active ? "published" : "draft" as JourneyStatus,
     createdAt: definition.metadata.createdAt,
     updatedAt: definition.metadata.updatedAt,
     statesCount: definition.nodes.length,

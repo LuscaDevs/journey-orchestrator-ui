@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "generate-api": "openapi-generator-cli generate -i ../journey-orchestrator/api-spec/openapi.yaml -g typescript-axios -o src/api --additional-properties=singleRequestParameters=true,withSeparateModelsAndApi=true,modelPackage=models,apiPackage=apis"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.16",

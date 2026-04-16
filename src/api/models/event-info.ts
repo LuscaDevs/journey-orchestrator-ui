@@ -13,6 +13,15 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+export interface EventInfo {
+    /**
+     * Type of the event that triggered the transition
+     */
+    'type': string;
+    /**
+     * Event-specific data
+     */
+    'data'?: { [key: string]: any; };
+}
+

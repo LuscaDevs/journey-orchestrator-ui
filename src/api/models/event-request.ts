@@ -13,6 +13,9 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+export interface EventRequest {
+    'event': string;
+    'payload'?: { [key: string]: any; };
+}
+

@@ -13,6 +13,11 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+// May contain unused imports in some cases
+// @ts-ignore
+import type { ErrorResponseError } from './error-response-error';
+
+export interface ErrorResponse {
+    'error': ErrorResponseError;
+}
+

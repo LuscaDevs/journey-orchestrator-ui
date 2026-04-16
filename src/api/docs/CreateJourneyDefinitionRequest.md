@@ -1,42 +1,28 @@
-
 # CreateJourneyDefinitionRequest
 
 
 ## Properties
 
-Name | Type
------------- | -------------
-`journeyCode` | string
-`name` | string
-`version` | number
-`states` | [Array&lt;State&gt;](State.md)
-`transitions` | [Array&lt;TransitionRequest&gt;](TransitionRequest.md)
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**journeyCode** | **string** |  | [default to undefined]
+**name** | **string** |  | [default to undefined]
+**version** | **number** |  | [default to undefined]
+**states** | [**Array&lt;State&gt;**](State.md) |  | [default to undefined]
+**transitions** | [**Array&lt;TransitionRequest&gt;**](TransitionRequest.md) |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import type { CreateJourneyDefinitionRequest } from ''
+import { CreateJourneyDefinitionRequest } from './api';
 
-// TODO: Update the object below with actual values
-const example = {
-  "journeyCode": null,
-  "name": null,
-  "version": null,
-  "states": null,
-  "transitions": null,
-} satisfies CreateJourneyDefinitionRequest
-
-console.log(example)
-
-// Convert the instance to a JSON string
-const exampleJSON: string = JSON.stringify(example)
-console.log(exampleJSON)
-
-// Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as CreateJourneyDefinitionRequest
-console.log(exampleParsed)
+const instance: CreateJourneyDefinitionRequest = {
+    journeyCode,
+    name,
+    version,
+    states,
+    transitions,
+};
 ```
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

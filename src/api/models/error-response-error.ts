@@ -13,6 +13,19 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+export interface ErrorResponseError {
+    /**
+     * Error code
+     */
+    'code': string;
+    /**
+     * Human-readable error message
+     */
+    'message': string;
+    /**
+     * Additional error details
+     */
+    'details'?: { [key: string]: any; };
+}
+

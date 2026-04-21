@@ -15,6 +15,9 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
+import type { JourneyDefinitionStatus } from './journey-definition-status';
+// May contain unused imports in some cases
+// @ts-ignore
 import type { State } from './state';
 // May contain unused imports in some cases
 // @ts-ignore
@@ -27,7 +30,10 @@ export interface JourneyDefinitionResponse {
     'version'?: number;
     'states'?: Array<State>;
     'transitions'?: Array<TransitionResponse>;
-    'active'?: boolean;
+    'status'?: JourneyDefinitionStatus;
     'createdAt'?: string;
+    'updatedAt'?: string;
 }
+
+
 

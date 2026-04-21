@@ -40,7 +40,7 @@ export const toApiRequest = (definition: JourneyDefinition): CreateJourneyDefini
   }));
 
   return {
-    journeyCode: definition.id, // Use definition id as journeyCode
+    journeyCode: definition.journeyCode,
     name: definition.name,
     version: definition.version,
     states,
@@ -72,19 +72,18 @@ export const fromApiResponse = (response: JourneyDefinitionResponse): JourneyDef
     condition: transition.condition
   }));
 
-  // Map active boolean to status
-  const status = response.active ? 'published' : 'draft';
-
   return {
     id: response.id || uuidv4(),
+    journeyCode: response.journeyCode || '',
     name: response.name || '',
     version: response.version || 1,
     nodes,
     edges,
     metadata: {
       createdAt: response.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: response.updatedAt || new Date().toISOString()
     },
-    status
+    status: (response.status as string) as 'ATIVA' | 'INATIVA' | 'RASCUNHO' || 'RASCUNHO',
+    isNew: false
   };
 };

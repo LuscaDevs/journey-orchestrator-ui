@@ -74,6 +74,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     try {
       const newDefinition: JourneyDefinition = {
         id: uuidv4(),
+        journeyCode: '',
         name,
         version: 1,
         nodes: [],
@@ -82,7 +83,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         },
-        status: 'draft'
+        status: 'RASCUNHO',
+        isNew: true
       };
 
       set((state) => ({
@@ -115,6 +117,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         nodes,
         edges,
         name,
+        currentDefinition.journeyCode || '',
         currentDefinition,
         !isNewDefinition // Only increment version if it's not a new definition
       );
@@ -316,6 +319,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       nodes,
       edges,
       currentDefinition.name,
+      currentDefinition.journeyCode || '',
       currentDefinition,
       false // Don't increment version on real-time updates
     );

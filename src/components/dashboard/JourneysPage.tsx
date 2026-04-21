@@ -144,14 +144,16 @@ export function JourneysPage() {
     }
   }
 
-  const publishedCount = journeys.filter((j) => j.status === "published").length
-  const draftCount = journeys.filter((j) => j.status === "draft").length
+  const publishedCount = journeys.filter((j) => j.status === "ATIVA").length
+  const draftCount = journeys.filter((j) => j.status === "RASCUNHO").length
 
   const filterLabel =
     filterStatus === "all"
       ? "Todos os status"
-      : filterStatus === "published"
-      ? "Publicados"
+      : filterStatus === "ATIVA"
+      ? "Ativas"
+      : filterStatus === "INATIVA"
+      ? "Inativas"
       : "Rascunhos"
 
   return (
@@ -244,8 +246,9 @@ export function JourneysPage() {
                 className="h-9 text-sm border border-input bg-muted text-foreground px-3 py-1 rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="all">{filterLabel}</option>
-                <option value="published">Publicados</option>
-                <option value="draft">Rascunhos</option>
+                <option value="ATIVA">Ativas</option>
+                <option value="INATIVA">Inativas</option>
+                <option value="RASCUNHO">Rascunhos</option>
               </select>
             </div>
             <span className="text-xs text-muted-foreground ml-auto">

@@ -34,7 +34,7 @@ export function journeyDefinitionToJourney(definition: JourneyDefinition, index:
     code: definition.journeyCode || generateJourneyCode(index),
     name: definition.name,
     version: `v${definition.version}.0.0`,
-    status: definition.status as JourneyStatus,
+    status: definition.status || 'RASCUNHO',
     createdAt: definition.metadata.createdAt,
     updatedAt: definition.metadata.updatedAt,
     statesCount: definition.nodes.length,

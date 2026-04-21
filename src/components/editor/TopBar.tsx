@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { useJourneyDefinitionStore } from "../../store/useJourneyDefinitionStore"
 import { Button } from "../ui/Button"
 import { Badge } from "../ui/Badge"
+import { Input } from "../ui/Input"
 import {
   ArrowLeft,
   Save,
@@ -49,6 +50,45 @@ export function TopBar() {
       saveJustCompleted.current = false
     }
   }, [success])
+
+  // State for editing journey code and name
+  const [isEditingName, setIsEditingName] = React.useState(false)
+  const [isEditingCode, setIsEditingCode] = React.useState(false)
+  const [editedName, setEditedName] = React.useState(currentDefinition?.name || '')
+  const [editedCode, setEditedCode] = React.useState(currentDefinition?.journeyCode || '')
+
+  // Update edited values when currentDefinition changes
+  React.useEffect(() => {
+    if (currentDefinition) {
+      setEditedName(currentDefinition.name || '')
+      setEditedCode(currentDefinition.journeyCode || '')
+    }
+  }, [currentDefinition])
+
+  const handleSaveName = () => {
+    if (currentDefinition && editedName) {
+      updateDefinition(editedName)
+      setIsEditingName(false)
+    }
+  }
+
+  const handleSaveCode = () => {
+    if (currentDefinition && editedCode) {
+      // Validate SNAKE_CASE
+      const snakeCaseRegex = /^[A-Z][A-Z0-9_]*$/
+      if (!snakeCaseRegex.test(editedCode)) {
+        alert('O journey code deve estar em SNAKE_CASE (ex: MY_JOURNEY)')
+        return
+      }
+      if (editedCode.length > 10) {
+        alert('O journey code deve ter no máximo 10 caracteres')
+        return
+      }
+      // Update journey code
+      setEditedCode(editedCode)
+      setIsEditingCode(false)
+    }
+  }
 
   const handleSave = async () => {
     if (currentDefinition?.name) {
@@ -103,8 +143,8 @@ export function TopBar() {
   const displayError = getErrorMessage(error)
 
   const handlePublish = () => {
-    if (currentDefinition?.status === "draft") {
-      // Update status to published - this would need to be implemented in the store
+    if (currentDefinition?.status === "RASCUNHO") {
+      // Update status to ATIVA - this would need to be implemented in the store
       // For now, just save
       handleSave()
     }
@@ -215,28 +255,83 @@ export function TopBar() {
         </Button>
 
         <div className="flex items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-semibold text-foreground">
-                {currentDefinition.name || "Nova Jornada"}
-              </h1>
-              {hasUnsavedChanges && (
-                <Circle className="h-2 w-2 fill-amber-500 text-amber-500" />
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {currentDefinition.id.slice(0, 8)}... v{currentDefinition.version}
-            </p>
+          <div className="flex flex-col gap-1">
+            {/* Name field */}
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  onBlur={handleSaveName}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName()
+                    if (e.key === 'Escape') {
+                      setEditedName(currentDefinition?.name || '')
+                      setIsEditingName(false)
+                    }
+                  }}
+                  className="h-6 text-sm font-semibold text-foreground px-2 py-0 w-48"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 
+                  className="text-sm font-semibold text-foreground cursor-pointer hover:text-primary"
+                  onClick={() => setIsEditingName(true)}
+                  title="Clique para editar o nome"
+                >
+                  {currentDefinition.name || "Nova Jornada"}
+                </h1>
+                {hasUnsavedChanges && (
+                  <Circle className="h-2 w-2 fill-amber-500 text-amber-500" />
+                )}
+              </div>
+            )}
+            
+            {/* Journey code field */}
+            {isEditingCode ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  value={editedCode}
+                  onChange={(e) => setEditedCode(e.target.value.toUpperCase())}
+                  onBlur={handleSaveCode}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveCode()
+                    if (e.key === 'Escape') {
+                      setEditedCode(currentDefinition?.journeyCode || '')
+                      setIsEditingCode(false)
+                    }
+                  }}
+                  placeholder="CÓDIGO"
+                  className="h-5 text-xs text-muted-foreground px-2 py-0 w-24"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <p 
+                  className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
+                  onClick={() => setIsEditingCode(true)}
+                  title="Clique para editar o código"
+                >
+                  {currentDefinition.journeyCode || 'CÓDIGO'}
+                </p>
+                <span className="text-xs text-muted-foreground">
+                  {currentDefinition.id.slice(0, 8)}... v{currentDefinition.version}
+                </span>
+              </div>
+            )}
           </div>
           <Badge
-            variant={currentDefinition.status === "published" ? "default" : "secondary"}
+            variant={currentDefinition.status === "ATIVA" ? "default" : "secondary"}
             className={
-              currentDefinition.status === "published"
+              currentDefinition.status === "ATIVA"
                 ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
                 : "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
             }
           >
-            {currentDefinition.status === "published" ? "Publicado" : "Rascunho"}
+            {currentDefinition.status === "ATIVA" ? "Ativa" : "Rascunho"}
           </Badge>
         </div>
       </div>
@@ -258,7 +353,7 @@ export function TopBar() {
           Salvar
         </Button>
 
-        {currentDefinition.status === "draft" && (
+        {currentDefinition.status === "RASCUNHO" && (
           <Button
             size="sm"
             onClick={handlePublish}

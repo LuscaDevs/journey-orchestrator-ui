@@ -75,9 +75,13 @@ export function TopBar() {
 
   const handleSave = async () => {
     if (currentDefinition?.name) {
-      // Update journey code and name before saving
-      updateJourneyCode(editedCode)
-      updateDefinition(editedName)
+      // Update journey code and name in currentDefinition before saving
+      const { setCurrentDefinition } = useJourneyDefinitionStore()
+      setCurrentDefinition({
+        ...currentDefinition,
+        journeyCode: editedCode,
+        name: editedName
+      })
       saveJustCompleted.current = true
       await saveCurrentDefinition()
     }
@@ -284,7 +288,7 @@ export function TopBar() {
           variant="outline"
           size="sm"
           onClick={handleSave}
-          disabled={!hasUnsavedChanges || isLoading || !currentDefinition?.name || !!success || saveJustCompleted.current}
+          disabled={!hasUnsavedChanges || isLoading || !currentDefinition?.name || !!success}
           className="gap-2"
         >
           {isLoading ? (

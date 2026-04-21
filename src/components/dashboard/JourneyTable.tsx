@@ -20,6 +20,8 @@ import {
   ArrowUpDown,
   GitBranch,
   ArrowRight,
+  Power,
+  PowerOff,
 } from "lucide-react"
 import type { Journey, JourneyStatus } from "../../lib/journeyAdapter"
 import { formatDate } from "../../lib/journeyAdapter"
@@ -30,7 +32,7 @@ interface JourneysTableProps {
   onUpdate: (updated: Journey) => void
   onDelete: (id: string) => void
   onDuplicate: (journey: Journey) => void
-  onPublish: (id: string) => void
+  onPublish: (id: string, newStatus: "ATIVA" | "INATIVA") => void
   onEdit: (journey: Journey) => void
 }
 
@@ -40,7 +42,7 @@ type SortDir = "asc" | "desc"
 function StatusBadge({ status }: { status: JourneyStatus }) {
   const isActive = status === "ATIVA";
   const isInactive = status === "INATIVA";
-  
+
   return (
     <Badge
       variant="outline"
@@ -49,7 +51,7 @@ function StatusBadge({ status }: { status: JourneyStatus }) {
         isActive
           ? "border-[oklch(0.65_0.18_160/0.4)] text-[oklch(0.75_0.18_160)] bg-[oklch(0.65_0.18_160/0.08)]"
           : isInactive
-          ? "border-[oklch(0.62_0.16_60/0.4)] text-[oklch(0.78_0.14_60)] bg-[oklch(0.62_0.16_60/0.08)]"
+          ? "border-destructive/40 text-destructive bg-destructive/10"
           : "border-[oklch(0.62_0.16_60/0.4)] text-[oklch(0.78_0.14_60)] bg-[oklch(0.62_0.16_60/0.08)]"
       )}
     >
@@ -58,6 +60,8 @@ function StatusBadge({ status }: { status: JourneyStatus }) {
           "h-1.5 w-1.5 rounded-full shrink-0",
           isActive
             ? "bg-[oklch(0.65_0.18_160)]"
+            : isInactive
+            ? "bg-destructive"
             : "bg-[oklch(0.72_0.16_60)]"
         )}
       />
@@ -220,10 +224,32 @@ export function JourneysTable({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-[oklch(0.65_0.18_160)] hover:bg-[oklch(0.65_0.18_160/0.1)]"
-                        onClick={() => onPublish(journey.id)}
+                        onClick={() => onPublish(journey.id, "ATIVA")}
                         title="Publicar"
                       >
                         <Globe className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {journey.status === "ATIVA" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => onPublish(journey.id, "INATIVA")}
+                        title="Desativar"
+                      >
+                        <PowerOff className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {journey.status === "INATIVA" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-[oklch(0.65_0.18_160)] hover:bg-[oklch(0.65_0.18_160/0.1)]"
+                        onClick={() => onPublish(journey.id, "ATIVA")}
+                        title="Ativar"
+                      >
+                        <Power className="h-3.5 w-3.5" />
                       </Button>
                     )}
                     <Button

@@ -26,6 +26,7 @@ interface JourneyDefinitionActions {
   updateDefinition: (name: string) => void;
   updateJourneyCode: (journeyCode: string) => void;
   deleteDefinition: (id: string) => void;
+  setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void;
   loadDefinition: (definition: JourneyDefinition) => void;
   loadDefinitionsFromAPI: () => Promise<void>;
   updateCurrentDefinition: (nodes: Node[], edges: Edge[]) => void;
@@ -64,14 +65,18 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   isNewJourney: false,
 
   setCurrentDefinition: (definition) => {
-    set({ 
+    set({
       currentDefinition: definition,
-      hasUnsavedChanges: false 
+      hasUnsavedChanges: false
     });
   },
 
+  setHasUnsavedChanges: (hasUnsavedChanges: boolean) => {
+    set({ hasUnsavedChanges });
+  },
+
   createDefinition: async (name) => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true, error: null, isNewJourney: true });
     try {
       const newDefinition: JourneyDefinition = {
         id: uuidv4(),
@@ -259,18 +264,24 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   // Function to check if there are actual changes
   hasActualChanges: () => {
     const { currentDefinition, initialDefinition } = get();
-    console.log('hasActualChanges called:', { 
-      hasCurrent: !!currentDefinition, 
+    console.log('hasActualChanges called:', {
+      hasCurrent: !!currentDefinition,
       hasInitial: !!initialDefinition,
       currentId: currentDefinition?.id,
-      initialId: initialDefinition?.id
+      initialId: initialDefinition?.id,
+      currentName: currentDefinition?.name,
+      initialName: initialDefinition?.name,
+      currentCode: currentDefinition?.journeyCode,
+      initialCode: initialDefinition?.journeyCode,
+      currentStatus: currentDefinition?.status,
+      initialStatus: initialDefinition?.status
     });
-    
+
     if (!currentDefinition || !initialDefinition) {
       console.log('hasActualChanges: missing definitions, returning false');
       return false;
     }
-    
+
     // Create copies for comparison without metadata that might change on selection
     const currentCopy = {
       ...currentDefinition,
@@ -279,7 +290,7 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         updatedAt: initialDefinition.metadata.updatedAt // Ignore updatedAt differences
       }
     };
-    
+
     const initialCopy = {
       ...initialDefinition,
       metadata: {
@@ -287,15 +298,27 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         updatedAt: initialDefinition.metadata.updatedAt
       }
     };
-    
+
     // Deep comparison ignoring selection-related changes
     const currentStr = JSON.stringify(currentCopy);
     const initialStr = JSON.stringify(initialCopy);
     const hasChanges = currentStr !== initialStr;
-    
+
     console.log('hasActualChanges result:', hasChanges);
     console.log('Current length:', currentStr.length, 'Initial length:', initialStr.length);
-    
+
+    if (hasChanges) {
+      console.log('Difference detected, comparing key fields:');
+      console.log('Name match:', currentDefinition.name === initialDefinition.name);
+      console.log('Code match:', currentDefinition.journeyCode === initialDefinition.journeyCode);
+      console.log('Status match:', currentDefinition.status === initialDefinition.status);
+      console.log('Version match:', currentDefinition.version === initialDefinition.version);
+      console.log('Nodes length match:', currentDefinition.nodes?.length === initialDefinition.nodes?.length);
+      console.log('Edges length match:', currentDefinition.edges?.length === initialDefinition.edges?.length);
+      console.log('Current JSON:', currentStr);
+      console.log('Initial JSON:', initialStr);
+    }
+
     return hasChanges;
   },
 
@@ -360,11 +383,14 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       const persistedDefinition = fromApiResponse(apiResponse);
 
       set((state) => ({
-        definitions: isNewJourney 
+        definitions: isNewJourney
           ? [...state.definitions, persistedDefinition]
           : state.definitions.map(def => def.id === persistedDefinition.id ? persistedDefinition : def),
         currentDefinition: persistedDefinition,
-        initialDefinition: JSON.parse(JSON.stringify(persistedDefinition)),
+        initialDefinition: (() => {
+          const { isNew, ...defWithoutIsNew } = persistedDefinition as any;
+          return JSON.parse(JSON.stringify(defWithoutIsNew));
+        })(),
         hasUnsavedChanges: false,
         isLoading: false,
         success: 'Jornada salva com sucesso!',

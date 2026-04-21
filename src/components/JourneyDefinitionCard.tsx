@@ -57,7 +57,7 @@ export function JourneyDefinitionCard({
     >
       <div className="journey-card-header">
         <h3 className="journey-card-title">{journey.name}</h3>
-        <span className={`journey-card-status ${journey.status === 'ATIVA' ? 'active' : journey.status === 'INATIVA' ? 'inactive' : 'draft'}`}>
+        <span className={`journey-card-status ${journey.status === 'ATIVA' ? 'active' : journey.status === 'INATIVA' ? 'inactive-red' : 'draft'}`}>
           {journey.status === 'ATIVA' ? 'Ativa' : journey.status === 'INATIVA' ? 'Inativa' : 'Rascunho'}
         </span>
       </div>

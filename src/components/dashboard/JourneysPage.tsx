@@ -14,7 +14,7 @@ type FilterStatus = "all" | JourneyStatus
 
 export function JourneysPage() {
   const navigate = useNavigate()
-  const { definitions, createDefinition, deleteDefinition, loadDefinition, setCurrentDefinition, loadDefinitionsFromAPI, isLoading, error } = useJourneyDefinitionStore()
+  const { definitions, createDefinition, deleteDefinition, loadDefinition, setCurrentDefinition, loadDefinitionsFromAPI, isLoading, error, setHasUnsavedChanges } = useJourneyDefinitionStore()
   const [search, setSearch] = useState("")
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all")
 
@@ -40,11 +40,10 @@ export function JourneysPage() {
   }, [journeys, search, filterStatus])
 
   function handleCreateJourney() {
-    const name = prompt('Nome da nova jornada:')
-    if (name) {
-      createDefinition(name)
-      setTimeout(() => navigate('/editor'), 100)
-    }
+    createDefinition('')
+    const { setHasUnsavedChanges } = useJourneyDefinitionStore.getState()
+    setHasUnsavedChanges(true)
+    setTimeout(() => navigate('/editor'), 100)
   }
 
   function handleEditJourney(journey: Journey) {
@@ -73,7 +72,7 @@ export function JourneysPage() {
           ...definition,
           id: crypto.randomUUID(),
           name: newName,
-          journeyCode: '', // Will be generated or user can set it
+          journeyCode: definition.journeyCode, // Copy the journey code
           version: 1,
           status: 'RASCUNHO',
           metadata: {
@@ -83,38 +82,50 @@ export function JourneysPage() {
           isNew: true
         }
 
-        // Load the duplicated definition and navigate to editor
-        loadDefinition(duplicatedDefinition)
+        // Load the duplicated definition directly with isNewJourney flag
+        const store = useJourneyDefinitionStore.getState()
+        store.setCurrentDefinition(duplicatedDefinition)
+        store.setHasUnsavedChanges(true)
+        // Manually set isNewJourney to true to ensure POST is used on save
+        useJourneyDefinitionStore.setState({ isNewJourney: true })
         navigate('/editor')
       }
     }
   }
 
-  function handlePublishJourney(id: string) {
-    // Find the original JourneyDefinition
+  async function handlePublishJourney(id: string, newStatus: "ATIVA" | "INATIVA") {
     const definition = definitions.find(def => def.id === id)
     if (definition) {
-      // Remove "(Cópia)" from name to mark as published
-      const publishedName = definition.name.replace(' (Cópia)', '')
-      const { definitions: currentDefs } = useJourneyDefinitionStore.getState()
-      
-      const updatedDefinition: JourneyDefinition = {
-        ...definition,
-        name: publishedName,
-        version: definition.version + 1,
-        metadata: {
-          ...definition.metadata,
-          updatedAt: new Date().toISOString()
-        }
-      }
+      try {
+        const { JourneyDefinitionsApi } = await import('../../api/apis/journey-definitions-api')
+        const { Configuration } = await import('../../api/configuration')
 
-      useJourneyDefinitionStore.setState({
-        definitions: currentDefs.map(def => 
-          def.id === id ? updatedDefinition : def
-        ),
-        currentDefinition: updatedDefinition,
-        hasUnsavedChanges: false
-      })
+        const configuration = new Configuration({ basePath: 'http://localhost:8080' })
+        const api = new JourneyDefinitionsApi(configuration)
+
+        const request = { status: newStatus as any }
+        const response = await api.updateJourneyDefinitionStatus(id, request)
+
+        // Update the definition in the store with the new status
+        const { definitions: currentDefs } = useJourneyDefinitionStore.getState()
+        const updatedDefinition = {
+          ...definition,
+          status: newStatus,
+          metadata: {
+            ...definition.metadata,
+            updatedAt: new Date().toISOString()
+          }
+        }
+
+        useJourneyDefinitionStore.setState({
+          definitions: currentDefs.map(def => 
+            def.id === id ? updatedDefinition : def
+          )
+        })
+      } catch (error) {
+        console.error('Error updating journey status:', error)
+        alert('Erro ao atualizar status da jornada')
+      }
     }
   }
 
@@ -146,6 +157,7 @@ export function JourneysPage() {
 
   const publishedCount = journeys.filter((j) => j.status === "ATIVA").length
   const draftCount = journeys.filter((j) => j.status === "RASCUNHO").length
+  const inactiveCount = journeys.filter((j) => j.status === "INATIVA").length
 
   const filterLabel =
     filterStatus === "all"
@@ -197,7 +209,7 @@ export function JourneysPage() {
       {!isLoading && !error && (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
                 <GitBranch className="h-4 w-4 text-primary" />
@@ -212,7 +224,7 @@ export function JourneysPage() {
                 <Globe className="h-4 w-4 text-[oklch(0.65_0.18_160)]" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Publicadas</p>
+                <p className="text-xs text-muted-foreground">Ativas</p>
                 <p className="text-lg font-semibold text-foreground leading-tight">{publishedCount}</p>
               </div>
             </div>
@@ -223,6 +235,15 @@ export function JourneysPage() {
               <div>
                 <p className="text-xs text-muted-foreground">Rascunhos</p>
                 <p className="text-lg font-semibold text-foreground leading-tight">{draftCount}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-destructive/10">
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Inativas</p>
+                <p className="text-lg font-semibold text-foreground leading-tight">{inactiveCount}</p>
               </div>
             </div>
           </div>
@@ -245,7 +266,7 @@ export function JourneysPage() {
                 onChange={(e) => setFilterStatus(e.target.value as FilterStatus)}
                 className="h-9 text-sm border border-input bg-muted text-foreground px-3 py-1 rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="all">{filterLabel}</option>
+                <option value="all">Todos os status</option>
                 <option value="ATIVA">Ativas</option>
                 <option value="INATIVA">Inativas</option>
                 <option value="RASCUNHO">Rascunhos</option>
@@ -262,7 +283,7 @@ export function JourneysPage() {
             onUpdate={handleUpdateJourney}
             onDelete={handleDeleteJourney}
             onDuplicate={handleDuplicateJourney}
-            onPublish={handlePublishJourney}
+            onPublish={(id, newStatus) => handlePublishJourney(id, newStatus)}
             onEdit={handleEditJourney}
           />
         </>

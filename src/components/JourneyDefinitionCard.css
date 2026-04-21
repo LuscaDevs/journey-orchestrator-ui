@@ -69,6 +69,11 @@
   color: #6b7280;
 }
 
+.journey-card-status.inactive-red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .journey-card-status.draft {
   background: #fef3c7;
   color: #92400e;

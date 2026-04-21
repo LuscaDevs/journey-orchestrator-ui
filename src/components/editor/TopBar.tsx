@@ -29,6 +29,8 @@ export function TopBar() {
   const {
     currentDefinition,
     hasUnsavedChanges,
+    setHasUnsavedChanges,
+    setCurrentDefinition,
     hasActualChanges,
     updateDefinition,
     updateJourneyCode,
@@ -41,42 +43,50 @@ export function TopBar() {
     success,
     clearSuccess
   } = useJourneyDefinitionStore()
-
-  // Track if save was just completed to temporarily disable button
   const saveJustCompleted = React.useRef(false)
 
-  // Reset saveJustCompleted flag when success is cleared
-  React.useEffect(() => {
-    if (!success) {
-      saveJustCompleted.current = false
-    }
-  }, [success])
-
-  // State for editing journey code and name
   const [editedName, setEditedName] = React.useState(currentDefinition?.name || '')
   const [editedCode, setEditedCode] = React.useState(currentDefinition?.journeyCode || '')
 
-  // Update edited values when currentDefinition changes
+  // Initialize edited values on mount
   React.useEffect(() => {
     if (currentDefinition) {
       setEditedName(currentDefinition.name || '')
       setEditedCode(currentDefinition.journeyCode || '')
     }
+  }, []) // Run only once on mount
+
+  // Update edited values only after saved or after save, not on every currentDefinition change
+  React.useEffect(() => {
+    if (currentDefinition && saveJustCompleted.current) {
+      setEditedName(currentDefinition.name || '')
+      setEditedCode(currentDefinition.journeyCode || '')
+      saveJustCompleted.current = false
+    }
   }, [currentDefinition])
 
   const handleNameChange = (value: string) => {
     setEditedName(value)
+    setHasUnsavedChanges(true)
   }
 
   const handleCodeChange = (value: string) => {
     const upperValue = value.toUpperCase()
     setEditedCode(upperValue)
+    setHasUnsavedChanges(true)
+  }
+
+  const hasEditedChanges = () => {
+    if (!currentDefinition) return false
+    return (
+      editedName !== currentDefinition.name ||
+      editedCode !== currentDefinition.journeyCode
+    )
   }
 
   const handleSave = async () => {
-    if (currentDefinition?.name) {
+    if (currentDefinition) {
       // Update journey code and name in currentDefinition before saving
-      const { setCurrentDefinition } = useJourneyDefinitionStore()
       setCurrentDefinition({
         ...currentDefinition,
         journeyCode: editedCode,
@@ -95,6 +105,7 @@ export function TopBar() {
     
     // Map backend error codes to user-friendly messages
     const errorMessages: Record<string, string> = {
+      'INVALID_BASIC_FIELDS': 'Preencha o Journey Code e o Journey Name antes de salvar.',
       'NO_INITIAL_STATE': 'A journey deve ter um estado inicial. Adicione um estado do tipo "INITIAL" antes de salvar.',
       'NO_FINAL_STATE': 'A journey deve ter um estado final. Adicione um estado do tipo "FINAL" antes de salvar.',
       'SOURCE_STATE_NOT_FOUND': 'Estado de origem não encontrado na transição. Verifique as conexões entre estados.',
@@ -102,7 +113,7 @@ export function TopBar() {
       'TRANSITION_CONFLICT': 'Conflito na transição: o estado de origem e destino referem-se a estados diferentes. Verifique as conexões.',
       'TRANSITION_SOURCE_REQUIRED': 'A transição deve ter um estado de origem. Verifique as conexões entre estados.',
       'TRANSITION_TARGET_REQUIRED': 'A transição deve ter um estado de destino. Verifique as conexões entre estados.',
-      'UNREACHABLE_STATE': detail 
+      'UNREACHABLE_STATE': detail
         ? `Alguns estados não são alcançáveis a partir do estado inicial: ${detail.replace(/Journey definition validation failed: /, '').replace(/State /g, '').replace(/; /g, ', ').replace(/ is unreachable from initial state/g, '')}. Adicione transições para conectar esses estados.`
         : 'Alguns estados não são alcançáveis a partir do estado inicial. Adicione transições para conectar os estados.',
     }
@@ -113,6 +124,9 @@ export function TopBar() {
     }
     
     // Fallback: try to parse from detail string for backward compatibility
+    if (error.includes('Journey code is required') || error.includes('Journey name is required')) {
+      return errorMessages['INVALID_BASIC_FIELDS']
+    }
     if (error.includes('No INITIAL state defined')) {
       return errorMessages['NO_INITIAL_STATE']
     }
@@ -141,7 +155,7 @@ export function TopBar() {
   }
 
   const handleBack = () => {
-    if (hasActualChanges()) {
+    if (hasActualChanges() || hasEditedChanges()) {
       if (confirm("Você tem alterações não salvas. Deseja descartá-las?")) {
         discardChanges()
         navigate("/")
@@ -250,7 +264,7 @@ export function TopBar() {
             <Input
               value={editedCode}
               onChange={(e) => handleCodeChange(e.target.value)}
-              placeholder="CÓDIGO"
+              placeholder="Journey Code"
               className="h-6 text-sm font-semibold text-foreground px-2 py-0 w-32"
               maxLength={10}
             />
@@ -262,7 +276,8 @@ export function TopBar() {
               value={editedName}
               onChange={(e) => handleNameChange(e.target.value)}
               className="h-6 text-sm font-semibold text-foreground px-2 py-0 w-32"
-              placeholder="Nome da Jornada"
+              placeholder="Journey Name"
+              maxLength={20}
             />
             {hasUnsavedChanges && (
               <Circle className="h-2 w-2 fill-amber-500 text-amber-500" />
@@ -274,10 +289,12 @@ export function TopBar() {
             className={
               currentDefinition.status === "ATIVA"
                 ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                : currentDefinition.status === "INATIVA"
+                ? "bg-destructive/15 text-destructive hover:bg-destructive/25"
                 : "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
             }
           >
-            {currentDefinition.status === "ATIVA" ? "Ativa" : "Rascunho"}
+            {currentDefinition.status === "ATIVA" ? "Ativa" : currentDefinition.status === "INATIVA" ? "Inativa" : "Rascunho"}
           </Badge>
         </div>
       </div>
@@ -288,7 +305,7 @@ export function TopBar() {
           variant="outline"
           size="sm"
           onClick={handleSave}
-          disabled={!hasUnsavedChanges || isLoading || !currentDefinition?.name || !!success}
+          disabled={!hasUnsavedChanges || isLoading || !!success}
           className="gap-2"
         >
           {isLoading ? (

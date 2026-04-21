@@ -72,6 +72,9 @@ export const fromApiResponse = (response: JourneyDefinitionResponse): JourneyDef
     condition: transition.condition
   }));
 
+  // Map status from backend to frontend
+  const status = response.status ? (response.status as string) as 'ATIVA' | 'INATIVA' | 'RASCUNHO' : 'RASCUNHO';
+
   return {
     id: response.id || uuidv4(),
     journeyCode: response.journeyCode || '',
@@ -83,7 +86,7 @@ export const fromApiResponse = (response: JourneyDefinitionResponse): JourneyDef
       createdAt: response.createdAt || new Date().toISOString(),
       updatedAt: response.updatedAt || new Date().toISOString()
     },
-    status: (response.status as string) as 'ATIVA' | 'INATIVA' | 'RASCUNHO' || 'RASCUNHO',
+    status,
     isNew: false
   };
 };

@@ -10,6 +10,7 @@ interface JourneyDefinitionListProps {
   loading: boolean;
   error?: string;
   onJourneyClick: (journeyId: string) => void;
+  onActivateDeactivate?: (journeyId: string, currentStatus: 'ATIVA' | 'INATIVA' | 'RASCUNHO') => void;
   onCreateJourney: () => void;
   onRetry?: () => void;
 }
@@ -19,6 +20,7 @@ export function JourneyDefinitionList({
   loading,
   error,
   onJourneyClick,
+  onActivateDeactivate,
   onCreateJourney,
   onRetry,
 }: JourneyDefinitionListProps) {
@@ -51,6 +53,7 @@ export function JourneyDefinitionList({
             key={journey.id}
             journey={journey}
             onClick={() => onJourneyClick(journey.id)}
+            onActivateDeactivate={onActivateDeactivate}
           />
         ))}
       </div>

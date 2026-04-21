@@ -25,10 +25,12 @@ export interface JourneyDefinitionMetadata {
 
 export interface JourneyDefinition {
   id: string;
+  journeyCode: string;
   name: string;
   version: number;
   nodes: JourneyNode[];
   edges: JourneyEdge[];
   metadata: JourneyDefinitionMetadata;
-  status: 'draft' | 'published';
+  status: 'ATIVA' | 'INATIVA' | 'RASCUNHO';
+  isNew?: boolean; // Flag to indicate if this is a new journey not yet persisted
 }

@@ -48,7 +48,7 @@ function transformJourneyToListItem(journey: JourneyDefinitionResponse): Journey
     journeyCode: journey.journeyCode || '',
     name: journey.name || '',
     version: journey.version || 1,
-    active: journey.active || false,
+    status: journey.status || 'RASCUNHO',
     createdAt: typeof journey.createdAt === 'string' ? journey.createdAt : new Date().toISOString(),
   };
 }

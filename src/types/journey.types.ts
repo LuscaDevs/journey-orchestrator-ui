@@ -6,7 +6,7 @@ export interface JourneyDefinitionListItem {
   journeyCode: string;
   name: string;
   version: number;
-  active: boolean;
+  status: 'ATIVA' | 'INATIVA' | 'RASCUNHO';
   createdAt: string;
 }
 
@@ -46,5 +46,5 @@ export interface JourneySummary {
   stateCount: number;
   transitionCount: number;
   createdAt: string;
-  active: boolean;
+  status: 'ATIVA' | 'INATIVA' | 'RASCUNHO';
 }

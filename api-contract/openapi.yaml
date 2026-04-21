@@ -244,6 +244,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TransitionRequest"
+        status:
+          $ref: "#/components/schemas/JourneyDefinitionStatus"
 
     JourneyDefinitionResponse:
       type: object
@@ -264,8 +266,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TransitionResponse"
-        active:
-          type: boolean
+        status:
+          $ref: "#/components/schemas/JourneyDefinitionStatus"
         createdAt:
           type: string
           format: date-time
@@ -372,6 +374,13 @@ components:
         - COMPLETED
         - FAILED
         - CANCELLED
+
+    JourneyDefinitionStatus:
+      type: string
+      enum:
+        - ATIVA
+        - INATIVA
+        - RASCUNHO
 
     TransitionHistoryListResponse:
       type: object

@@ -6,6 +6,7 @@ export const toJourneyDefinition = (
   nodes: Node[],
   edges: Edge[],
   name: string,
+  journeyCode: string,
   existingDefinition?: JourneyDefinition,
   isSavedDefinition?: boolean
 ): JourneyDefinition => {
@@ -31,6 +32,7 @@ export const toJourneyDefinition = (
 
   return {
     id: existingDefinition?.id || uuidv4(),
+    journeyCode: existingDefinition?.journeyCode || journeyCode,
     name,
     version: isSavedDefinition && existingDefinition ? existingDefinition.version + 1 : (existingDefinition?.version || 1),
     nodes: journeyNodes,
@@ -39,7 +41,7 @@ export const toJourneyDefinition = (
       createdAt: existingDefinition?.metadata.createdAt || now,
       updatedAt: now
     },
-    status: existingDefinition?.status || 'draft'
+    status: existingDefinition?.status || 'RASCUNHO'
   };
 };
 

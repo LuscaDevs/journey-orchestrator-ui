@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useJourneyDefinitions } from '../hooks/useJourneyDefinitions';
 import { JourneyDefinitionList } from '../components/JourneyDefinitionList';
 import { CreateJourneyModal } from '../components/CreateJourneyModal';
+import { updateJourneyDefinitionStatus } from '../services/journeyService';
 import type { CreateJourneyFormData } from '../types/journey.types';
 
 export function JourneyDefinitionsPage() {
@@ -24,6 +25,22 @@ export function JourneyDefinitionsPage() {
 
   const handleJourneyClick = (journeyId: string) => {
     navigate(`/journeys/${journeyId}`);
+  };
+
+  const handleActivateDeactivate = async (journeyId: string, currentStatus: 'ATIVA' | 'INATIVA' | 'RASCUNHO') => {
+    try {
+      // Determine new status based on current status
+      const newStatus: 'ATIVA' | 'INATIVA' | 'RASCUNHO' = 
+        currentStatus === 'RASCUNHO' ? 'ATIVA' :
+        currentStatus === 'ATIVA' ? 'INATIVA' : 'ATIVA';
+
+      await updateJourneyDefinitionStatus(journeyId, newStatus);
+      toast.success(`Jornada ${newStatus === 'ATIVA' ? 'ativada' : newStatus === 'INATIVA' ? 'desativada' : 'definida como rascunho'} com sucesso!`);
+      refreshJourneys();
+    } catch (error) {
+      toast.error('Falha ao atualizar status da jornada');
+      console.error('Status update error:', error);
+    }
   };
 
   const handleCreateJourneyClick = () => {
@@ -51,6 +68,7 @@ export function JourneyDefinitionsPage() {
         loading={loading}
         error={error}
         onJourneyClick={handleJourneyClick}
+        onActivateDeactivate={handleActivateDeactivate}
         onCreateJourney={handleCreateJourneyClick}
         onRetry={refreshJourneys}
       />

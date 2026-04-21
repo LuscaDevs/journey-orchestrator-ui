@@ -4,6 +4,7 @@ import './JourneyDefinitionCard.css';
 interface JourneyDefinitionCardProps {
   journey: JourneyDefinitionListItem;
   onClick: (journeyId: string) => void;
+  onActivateDeactivate?: (journeyId: string, currentStatus: 'ATIVA' | 'INATIVA' | 'RASCUNHO') => void;
   variant?: 'default' | 'compact';
   disabled?: boolean;
   selected?: boolean;
@@ -12,6 +13,7 @@ interface JourneyDefinitionCardProps {
 export function JourneyDefinitionCard({
   journey,
   onClick,
+  onActivateDeactivate,
   variant = 'default',
   disabled = false,
   selected = false,
@@ -20,6 +22,19 @@ export function JourneyDefinitionCard({
     if (!disabled) {
       onClick(journey.id);
     }
+  };
+
+  const handleActivateDeactivate = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onActivateDeactivate) {
+      onActivateDeactivate(journey.id, journey.status);
+    }
+  };
+
+  const getButtonText = () => {
+    if (journey.status === 'RASCUNHO') return 'Ativar';
+    if (journey.status === 'ATIVA') return 'Desativar';
+    return 'Ativar';
   };
 
   const formatDate = (dateString: string) => {
@@ -42,8 +57,8 @@ export function JourneyDefinitionCard({
     >
       <div className="journey-card-header">
         <h3 className="journey-card-title">{journey.name}</h3>
-        <span className={`journey-card-status ${journey.active ? 'active' : 'inactive'}`}>
-          {journey.active ? 'Active' : 'Inactive'}
+        <span className={`journey-card-status ${journey.status === 'ATIVA' ? 'active' : journey.status === 'INATIVA' ? 'inactive' : 'draft'}`}>
+          {journey.status === 'ATIVA' ? 'Ativa' : journey.status === 'INATIVA' ? 'Inativa' : 'Rascunho'}
         </span>
       </div>
 
@@ -70,6 +85,15 @@ export function JourneyDefinitionCard({
       </div>
 
       <div className="journey-card-footer">
+        {onActivateDeactivate && (
+          <button
+            className="journey-card-activate-btn"
+            onClick={handleActivateDeactivate}
+            disabled={disabled}
+          >
+            {getButtonText()}
+          </button>
+        )}
         <span className="journey-card-action">View Details →</span>
       </div>
     </div>

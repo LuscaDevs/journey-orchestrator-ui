@@ -1,6 +1,6 @@
 import type { JourneyDefinition } from '../types/journey';
 
-export type JourneyStatus = "draft" | "published";
+export type JourneyStatus = "ATIVA" | "INATIVA" | "RASCUNHO";
 
 export interface Journey {
   id: string;
@@ -29,14 +29,12 @@ export function generateJourneyCode(index: number): string {
 }
 
 export function journeyDefinitionToJourney(definition: JourneyDefinition, index: number): Journey {
-  const isDraft = definition.name.includes('(Cópia)');
-  
   return {
     id: definition.id,
-    code: generateJourneyCode(index),
+    code: definition.journeyCode || generateJourneyCode(index),
     name: definition.name,
     version: `v${definition.version}.0.0`,
-    status: isDraft ? "draft" : "published" as JourneyStatus,
+    status: definition.status as JourneyStatus,
     createdAt: definition.metadata.createdAt,
     updatedAt: definition.metadata.updatedAt,
     statesCount: definition.nodes.length,
@@ -47,6 +45,7 @@ export function journeyDefinitionToJourney(definition: JourneyDefinition, index:
 export function journeyToJourneyDefinition(journey: Journey): Partial<JourneyDefinition> {
   return {
     id: journey.id,
+    journeyCode: journey.code,
     name: journey.name,
     version: parseInt(journey.version.split('.')[0]) || 1,
     metadata: {

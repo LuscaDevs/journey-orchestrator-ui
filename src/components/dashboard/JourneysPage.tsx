@@ -68,24 +68,24 @@ export function JourneysPage() {
     if (definition) {
       const newName = prompt('Nome da jornada duplicada:', `${definition.name} (Cópia)`)
       if (newName) {
+        // Create a new journey via API with the duplicated content
         const duplicatedDefinition: JourneyDefinition = {
           ...definition,
           id: crypto.randomUUID(),
           name: newName,
+          journeyCode: '', // Will be generated or user can set it
           version: 1,
+          status: 'RASCUNHO',
           metadata: {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
-          }
+          },
+          isNew: true
         }
 
-        // Add to definitions list and set as current
-        const { definitions: currentDefs } = useJourneyDefinitionStore.getState()
-        useJourneyDefinitionStore.setState({
-          definitions: [...currentDefs, duplicatedDefinition],
-          currentDefinition: duplicatedDefinition,
-          hasUnsavedChanges: false
-        })
+        // Load the duplicated definition and navigate to editor
+        loadDefinition(duplicatedDefinition)
+        navigate('/editor')
       }
     }
   }

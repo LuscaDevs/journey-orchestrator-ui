@@ -53,8 +53,6 @@ export function TopBar() {
   }, [success])
 
   // State for editing journey code and name
-  const [isEditingName, setIsEditingName] = React.useState(false)
-  const [isEditingCode, setIsEditingCode] = React.useState(false)
   const [editedName, setEditedName] = React.useState(currentDefinition?.name || '')
   const [editedCode, setEditedCode] = React.useState(currentDefinition?.journeyCode || '')
 
@@ -66,33 +64,20 @@ export function TopBar() {
     }
   }, [currentDefinition])
 
-  const handleSaveName = () => {
-    if (currentDefinition && editedName) {
-      updateDefinition(editedName)
-      setIsEditingName(false)
-    }
+  const handleNameChange = (value: string) => {
+    setEditedName(value)
   }
 
-  const handleSaveCode = () => {
-    if (currentDefinition && editedCode) {
-      // Validate SNAKE_CASE
-      const snakeCaseRegex = /^[A-Z][A-Z0-9_]*$/
-      if (!snakeCaseRegex.test(editedCode)) {
-        alert('O journey code deve estar em SNAKE_CASE (ex: MY_JOURNEY)')
-        return
-      }
-      if (editedCode.length > 10) {
-        alert('O journey code deve ter no máximo 10 caracteres')
-        return
-      }
-      // Update journey code in store
-      updateJourneyCode(editedCode)
-      setIsEditingCode(false)
-    }
+  const handleCodeChange = (value: string) => {
+    const upperValue = value.toUpperCase()
+    setEditedCode(upperValue)
   }
 
   const handleSave = async () => {
     if (currentDefinition?.name) {
+      // Update journey code and name before saving
+      updateJourneyCode(editedCode)
+      updateDefinition(editedName)
       saveJustCompleted.current = true
       await saveCurrentDefinition()
     }
@@ -256,74 +241,30 @@ export function TopBar() {
         </Button>
 
         <div className="flex items-center gap-3">
-          <div className="flex flex-col gap-1">
-            {/* Name field */}
-            {isEditingName ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  onBlur={handleSaveName}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveName()
-                    if (e.key === 'Escape') {
-                      setEditedName(currentDefinition?.name || '')
-                      setIsEditingName(false)
-                    }
-                  }}
-                  className="h-6 text-sm font-semibold text-foreground px-2 py-0 w-48"
-                  autoFocus
-                />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <h1 
-                  className="text-sm font-semibold text-foreground cursor-pointer hover:text-primary"
-                  onClick={() => setIsEditingName(true)}
-                  title="Clique para editar o nome"
-                >
-                  {currentDefinition.name || "Nova Jornada"}
-                </h1>
-                {hasUnsavedChanges && (
-                  <Circle className="h-2 w-2 fill-amber-500 text-amber-500" />
-                )}
-              </div>
-            )}
-            
-            {/* Journey code field */}
-            {isEditingCode ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={editedCode}
-                  onChange={(e) => setEditedCode(e.target.value.toUpperCase())}
-                  onBlur={handleSaveCode}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveCode()
-                    if (e.key === 'Escape') {
-                      setEditedCode(currentDefinition?.journeyCode || '')
-                      setIsEditingCode(false)
-                    }
-                  }}
-                  placeholder="CÓDIGO"
-                  className="h-5 text-xs text-muted-foreground px-2 py-0 w-24"
-                  autoFocus
-                />
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <p 
-                  className="text-xs text-muted-foreground cursor-pointer hover:text-primary"
-                  onClick={() => setIsEditingCode(true)}
-                  title="Clique para editar o código"
-                >
-                  {currentDefinition.journeyCode || 'CÓDIGO'}
-                </p>
-                <span className="text-xs text-muted-foreground">
-                  {currentDefinition.id.slice(0, 8)}... v{currentDefinition.version}
-                </span>
-              </div>
+          {/* Journey code field */}
+          <div className="flex items-center gap-2">
+            <Input
+              value={editedCode}
+              onChange={(e) => handleCodeChange(e.target.value)}
+              placeholder="CÓDIGO"
+              className="h-6 text-sm font-semibold text-foreground px-2 py-0 w-32"
+              maxLength={10}
+            />
+          </div>
+          
+          {/* Name field */}
+          <div className="flex items-center gap-2">
+            <Input
+              value={editedName}
+              onChange={(e) => handleNameChange(e.target.value)}
+              className="h-6 text-sm font-semibold text-foreground px-2 py-0 w-32"
+              placeholder="Nome da Jornada"
+            />
+            {hasUnsavedChanges && (
+              <Circle className="h-2 w-2 fill-amber-500 text-amber-500" />
             )}
           </div>
+          
           <Badge
             variant={currentDefinition.status === "ATIVA" ? "default" : "secondary"}
             className={

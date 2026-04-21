@@ -71,20 +71,21 @@ export function JourneysPage() {
         const duplicatedDefinition: JourneyDefinition = {
           ...definition,
           id: crypto.randomUUID(),
-          journeyCode: '', // Empty journeyCode - user will fill in editor
           name: newName,
           version: 1,
-          status: 'RASCUNHO',
-          isNew: true, // Flag to indicate this is a new journey not yet persisted
           metadata: {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           }
         }
 
-        // Set as current definition and navigate to editor
-        loadDefinition(duplicatedDefinition)
-        navigate('/editor')
+        // Add to definitions list and set as current
+        const { definitions: currentDefs } = useJourneyDefinitionStore.getState()
+        useJourneyDefinitionStore.setState({
+          definitions: [...currentDefs, duplicatedDefinition],
+          currentDefinition: duplicatedDefinition,
+          hasUnsavedChanges: false
+        })
       }
     }
   }
@@ -143,16 +144,14 @@ export function JourneysPage() {
     }
   }
 
-  const publishedCount = journeys.filter((j) => j.status === "ATIVA").length
-  const draftCount = journeys.filter((j) => j.status === "RASCUNHO").length
+  const publishedCount = journeys.filter((j) => j.status === "published").length
+  const draftCount = journeys.filter((j) => j.status === "draft").length
 
   const filterLabel =
     filterStatus === "all"
       ? "Todos os status"
-      : filterStatus === "ATIVA"
-      ? "Ativas"
-      : filterStatus === "INATIVA"
-      ? "Inativas"
+      : filterStatus === "published"
+      ? "Publicados"
       : "Rascunhos"
 
   return (

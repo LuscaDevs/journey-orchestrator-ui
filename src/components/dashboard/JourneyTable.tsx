@@ -32,7 +32,6 @@ interface JourneysTableProps {
   onDuplicate: (journey: Journey) => void
   onPublish: (id: string) => void
   onEdit: (journey: Journey) => void
-  onActivateDeactivate?: (id: string, currentStatus: JourneyStatus) => void
 }
 
 type SortKey = keyof Journey
@@ -44,22 +43,20 @@ function StatusBadge({ status }: { status: JourneyStatus }) {
       variant="outline"
       className={cn(
         "text-[11px] font-medium px-2 py-0.5 border rounded-full gap-1.5 items-center inline-flex",
-        status === "ATIVA"
+        status === "published"
           ? "border-[oklch(0.65_0.18_160/0.4)] text-[oklch(0.75_0.18_160)] bg-[oklch(0.65_0.18_160/0.08)]"
-          : status === "INATIVA"
-          ? "border-[oklch(0.62_0.16_60/0.4)] text-[oklch(0.78_0.14_60)] bg-[oklch(0.62_0.16_60/0.08)]"
           : "border-[oklch(0.62_0.16_60/0.4)] text-[oklch(0.78_0.14_60)] bg-[oklch(0.62_0.16_60/0.08)]"
       )}
     >
       <span
         className={cn(
           "h-1.5 w-1.5 rounded-full shrink-0",
-          status === "ATIVA"
+          status === "published"
             ? "bg-[oklch(0.65_0.18_160)]"
             : "bg-[oklch(0.72_0.16_60)]"
         )}
       />
-      {status === "ATIVA" ? "Ativa" : status === "INATIVA" ? "Inativa" : "Rascunho"}
+      {status === "published" ? "Publicado" : "Rascunho"}
     </Badge>
   )
 }
@@ -71,7 +68,6 @@ export function JourneysTable({
   onDuplicate,
   onPublish,
   onEdit,
-  onActivateDeactivate,
 }: JourneysTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("code")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
@@ -205,17 +201,6 @@ export function JourneysTable({
                     >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    {onActivateDeactivate && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-muted-foreground hover:text-[oklch(0.65_0.18_160)] hover:bg-[oklch(0.65_0.18_160/0.1)]"
-                        onClick={() => onActivateDeactivate(journey.id, journey.status)}
-                        title={journey.status === "RASCUNHO" || journey.status === "INATIVA" ? "Ativar" : "Desativar"}
-                      >
-                        <Globe className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -225,6 +210,17 @@ export function JourneysTable({
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
+                    {journey.status === "draft" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-[oklch(0.65_0.18_160)] hover:bg-[oklch(0.65_0.18_160/0.1)]"
+                        onClick={() => onPublish(journey.id)}
+                        title="Publicar"
+                      >
+                        <Globe className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"

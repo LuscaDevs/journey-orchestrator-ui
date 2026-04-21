@@ -72,8 +72,14 @@ export const fromApiResponse = (response: JourneyDefinitionResponse): JourneyDef
     condition: transition.condition
   }));
 
-  // Map status from backend to frontend
-  const status = response.status ? (response.status as string) as 'ATIVA' | 'INATIVA' | 'RASCUNHO' : 'RASCUNHO';
+  // Map status from backend string to frontend
+  let status: 'ATIVA' | 'INATIVA' | 'RASCUNHO' = 'RASCUNHO';
+  if (typeof response.status === 'string') {
+    const statusStr = response.status.toUpperCase();
+    if (statusStr === 'ATIVA' || statusStr === 'INATIVA' || statusStr === 'RASCUNHO') {
+      status = statusStr as 'ATIVA' | 'INATIVA' | 'RASCUNHO';
+    }
+  }
 
   return {
     id: response.id || uuidv4(),

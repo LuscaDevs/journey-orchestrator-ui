@@ -24,6 +24,7 @@ interface JourneyDefinitionActions {
   setCurrentDefinition: (definition: JourneyDefinition | null) => void;
   createDefinition: (name: string) => void;
   updateDefinition: (name: string) => void;
+  updateJourneyCode: (journeyCode: string) => void;
   deleteDefinition: (id: string) => void;
   loadDefinition: (definition: JourneyDefinition) => void;
   loadDefinitionsFromAPI: () => Promise<void>;
@@ -99,6 +100,19 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         isLoading: false 
       });
     }
+  },
+
+  updateJourneyCode: (journeyCode: string) => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    set((state) => ({
+      currentDefinition: {
+        ...state.currentDefinition!,
+        journeyCode
+      } as JourneyDefinition,
+      hasUnsavedChanges: true
+    }));
   },
 
   updateDefinition: async (name) => {

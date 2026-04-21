@@ -31,6 +31,7 @@ export function TopBar() {
     hasUnsavedChanges,
     hasActualChanges,
     updateDefinition,
+    updateCurrentDefinition,
     deleteDefinition,
     discardChanges,
     saveCurrentDefinition,
@@ -84,8 +85,7 @@ export function TopBar() {
         alert('O journey code deve ter no máximo 10 caracteres')
         return
       }
-      // Update journey code
-      setEditedCode(editedCode)
+      // Update journey code - just mark as unsaved changes
       setIsEditingCode(false)
     }
   }

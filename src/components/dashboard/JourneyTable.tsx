@@ -38,25 +38,30 @@ type SortKey = keyof Journey
 type SortDir = "asc" | "desc"
 
 function StatusBadge({ status }: { status: JourneyStatus }) {
+  const isActive = status === "ATIVA";
+  const isInactive = status === "INATIVA";
+  
   return (
     <Badge
       variant="outline"
       className={cn(
         "text-[11px] font-medium px-2 py-0.5 border rounded-full gap-1.5 items-center inline-flex",
-        status === "published"
+        isActive
           ? "border-[oklch(0.65_0.18_160/0.4)] text-[oklch(0.75_0.18_160)] bg-[oklch(0.65_0.18_160/0.08)]"
+          : isInactive
+          ? "border-[oklch(0.62_0.16_60/0.4)] text-[oklch(0.78_0.14_60)] bg-[oklch(0.62_0.16_60/0.08)]"
           : "border-[oklch(0.62_0.16_60/0.4)] text-[oklch(0.78_0.14_60)] bg-[oklch(0.62_0.16_60/0.08)]"
       )}
     >
       <span
         className={cn(
           "h-1.5 w-1.5 rounded-full shrink-0",
-          status === "published"
+          isActive
             ? "bg-[oklch(0.65_0.18_160)]"
             : "bg-[oklch(0.72_0.16_60)]"
         )}
       />
-      {status === "published" ? "Publicado" : "Rascunho"}
+      {isActive ? "Ativa" : isInactive ? "Inativa" : "Rascunho"}
     </Badge>
   )
 }
@@ -210,7 +215,7 @@ export function JourneysTable({
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
-                    {journey.status === "draft" && (
+                    {journey.status === "RASCUNHO" && (
                       <Button
                         variant="ghost"
                         size="icon"

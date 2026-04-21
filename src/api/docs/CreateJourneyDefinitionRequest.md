@@ -10,7 +10,6 @@ Name | Type | Description | Notes
 **version** | **number** |  | [default to undefined]
 **states** | [**Array&lt;State&gt;**](State.md) |  | [default to undefined]
 **transitions** | [**Array&lt;TransitionRequest&gt;**](TransitionRequest.md) |  | [default to undefined]
-**status** | [**JourneyDefinitionStatus**](JourneyDefinitionStatus.md) |  | [optional] [default to undefined]
 
 ## Example
 
@@ -23,7 +22,6 @@ const instance: CreateJourneyDefinitionRequest = {
     version,
     states,
     transitions,
-    status,
 };
 ```
 

@@ -1,19 +1,22 @@
-# ErrorResponse
+# StatePosition
 
+Visual editor position data (optional, for React Flow integration)
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**error** | [**ErrorResponseError**](ErrorResponseError.md) |  | [default to undefined]
+**x** | **number** | X coordinate | [default to undefined]
+**y** | **number** | Y coordinate | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ErrorResponse } from './api';
+import { StatePosition } from './api';
 
-const instance: ErrorResponse = {
-    error,
+const instance: StatePosition = {
+    x,
+    y,
 };
 ```
 

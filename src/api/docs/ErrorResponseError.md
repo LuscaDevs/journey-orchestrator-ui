@@ -1,38 +1,24 @@
-
 # ErrorResponseError
 
 
 ## Properties
 
-Name | Type
------------- | -------------
-`code` | string
-`message` | string
-`details` | { [key: string]: any; }
+Name | Type | Description | Notes
+------------ | ------------- | ------------- | -------------
+**code** | **string** | Error code | [default to undefined]
+**message** | **string** | Human-readable error message | [default to undefined]
+**details** | **{ [key: string]: any; }** | Additional error details | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import type { ErrorResponseError } from ''
+import { ErrorResponseError } from './api';
 
-// TODO: Update the object below with actual values
-const example = {
-  "code": null,
-  "message": null,
-  "details": null,
-} satisfies ErrorResponseError
-
-console.log(example)
-
-// Convert the instance to a JSON string
-const exampleJSON: string = JSON.stringify(example)
-console.log(exampleJSON)
-
-// Parse the JSON string back to an object
-const exampleParsed = JSON.parse(exampleJSON) as ErrorResponseError
-console.log(exampleParsed)
+const instance: ErrorResponseError = {
+    code,
+    message,
+    details,
+};
 ```
 
-[[Back to top]](#) [[Back to API list]](../README.md#api-endpoints) [[Back to Model list]](../README.md#models) [[Back to README]](../README.md)
-
-
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

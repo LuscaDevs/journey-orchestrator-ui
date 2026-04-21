@@ -13,6 +13,16 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+
+export const JourneyStatus = {
+    Running: 'RUNNING',
+    Completed: 'COMPLETED',
+    Failed: 'FAILED',
+    Cancelled: 'CANCELLED',
+} as const;
+
+export type JourneyStatus = typeof JourneyStatus[keyof typeof JourneyStatus];
+
+
+

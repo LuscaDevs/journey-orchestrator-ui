@@ -14,7 +14,6 @@ docs/ErrorResponseError.md
 docs/EventInfo.md
 docs/EventRequest.md
 docs/JourneyDefinitionResponse.md
-docs/JourneyDefinitionStatus.md
 docs/JourneyDefinitionsApi.md
 docs/JourneyInstanceHistoryApi.md
 docs/JourneyInstanceResponse.md
@@ -28,7 +27,6 @@ docs/TransitionHistoryEventResponse.md
 docs/TransitionHistoryListResponse.md
 docs/TransitionRequest.md
 docs/TransitionResponse.md
-docs/UpdateStatusRequest.md
 git_push.sh
 index.ts
 models/create-journey-definition-request.ts
@@ -39,7 +37,6 @@ models/event-info.ts
 models/event-request.ts
 models/index.ts
 models/journey-definition-response.ts
-models/journey-definition-status.ts
 models/journey-instance-response.ts
 models/journey-status.ts
 models/pagination-info.ts
@@ -50,4 +47,3 @@ models/transition-history-event-response.ts
 models/transition-history-list-response.ts
 models/transition-request.ts
 models/transition-response.ts
-models/update-status-request.ts

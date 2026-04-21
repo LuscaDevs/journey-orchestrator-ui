@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **version** | **number** |  | [optional] [default to undefined]
 **states** | [**Array&lt;State&gt;**](State.md) |  | [optional] [default to undefined]
 **transitions** | [**Array&lt;TransitionResponse&gt;**](TransitionResponse.md) |  | [optional] [default to undefined]
-**status** | [**JourneyDefinitionStatus**](JourneyDefinitionStatus.md) |  | [optional] [default to undefined]
+**active** | **boolean** |  | [optional] [default to undefined]
 **createdAt** | **string** |  | [optional] [default to undefined]
 
 ## Example
@@ -26,7 +26,7 @@ const instance: JourneyDefinitionResponse = {
     version,
     states,
     transitions,
-    status,
+    active,
     createdAt,
 };
 ```

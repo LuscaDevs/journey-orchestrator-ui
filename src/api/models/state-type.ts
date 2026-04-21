@@ -13,6 +13,15 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+
+export const StateType = {
+    Initial: 'INITIAL',
+    Intermediate: 'INTERMEDIATE',
+    Final: 'FINAL',
+} as const;
+
+export type StateType = typeof StateType[keyof typeof StateType];
+
+
+

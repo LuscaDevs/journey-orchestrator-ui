@@ -13,6 +13,23 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+export interface PaginationInfo {
+    /**
+     * Number of events returned in this page
+     */
+    'limit'?: number;
+    /**
+     * Number of events skipped
+     */
+    'offset'?: number;
+    /**
+     * Whether there are more events available
+     */
+    'hasNext'?: boolean;
+    /**
+     * Whether there are previous events available
+     */
+    'hasPrevious'?: boolean;
+}
+

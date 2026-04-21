@@ -13,6 +13,10 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+export interface CreateJourneyInstanceRequest {
+    'journeyCode': string;
+    'version': number;
+    'context'?: { [key: string]: any; };
+}
+

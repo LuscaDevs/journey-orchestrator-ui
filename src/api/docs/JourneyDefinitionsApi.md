@@ -9,7 +9,6 @@ All URIs are relative to *http://localhost:8080*
 |[**getJourneyDefinitionsByCode**](#getjourneydefinitionsbycode) | **GET** /journeys/{journeyCode} | Get all versions of a journey definition|
 |[**listJourneyDefinitions**](#listjourneydefinitions) | **GET** /journeys | List all journey definitions|
 |[**updateJourneyDefinition**](#updatejourneydefinition) | **PUT** /journeys/{id} | Update a journey definition|
-|[**updateJourneyDefinitionStatus**](#updatejourneydefinitionstatus) | **PATCH** /journeys/{id} | Update journey definition status|
 
 # **createJourneyDefinition**
 > JourneyDefinitionResponse createJourneyDefinition(createJourneyDefinitionRequest)
@@ -256,60 +255,6 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 |**200** | Journey definition updated |  -  |
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
-
-# **updateJourneyDefinitionStatus**
-> JourneyDefinitionResponse updateJourneyDefinitionStatus(updateStatusRequest)
-
-
-### Example
-
-```typescript
-import {
-    JourneyDefinitionsApi,
-    Configuration,
-    UpdateStatusRequest
-} from './api';
-
-const configuration = new Configuration();
-const apiInstance = new JourneyDefinitionsApi(configuration);
-
-let id: string; // (default to undefined)
-let updateStatusRequest: UpdateStatusRequest; //
-
-const { status, data } = await apiInstance.updateJourneyDefinitionStatus(
-    id,
-    updateStatusRequest
-);
-```
-
-### Parameters
-
-|Name | Type | Description  | Notes|
-|------------- | ------------- | ------------- | -------------|
-| **updateStatusRequest** | **UpdateStatusRequest**|  | |
-| **id** | [**string**] |  | defaults to undefined|
-
-
-### Return type
-
-**JourneyDefinitionResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: application/json
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-|**200** | Journey definition status updated |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

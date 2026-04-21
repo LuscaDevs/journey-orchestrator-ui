@@ -13,6 +13,18 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+/**
+ * Visual editor position data (optional, for React Flow integration)
+ */
+export interface StatePosition {
+    /**
+     * X coordinate
+     */
+    'x': number;
+    /**
+     * Y coordinate
+     */
+    'y': number;
+}
+

@@ -13,6 +13,8 @@
  */
 
 
-export * from "./api";
-export * from "./configuration";
-export * from "./models";
+
+export * from './apis/journey-definitions-api';
+export * from './apis/journey-instance-history-api';
+export * from './apis/journey-instances-api';
+

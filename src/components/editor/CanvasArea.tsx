@@ -130,17 +130,24 @@ export function CanvasArea({ className }: CanvasAreaProps) {
 
   // Sync store changes back to React Flow (for Properties Panel edits)
   useEffect(() => {
-    // Skip if changes originated from canvas (dragging) to prevent sync loop
-    if (isCanvasUpdate.current) {
-      console.log('CanvasArea: Skipping sync - change originated from canvas')
-      return
-    }
-
     const storeNodes = getStoreNodes()
     const storeEdges = getStoreEdges()
     
-    const nodesChanged = JSON.stringify(prevStoreNodesRef.current) !== JSON.stringify(storeNodes)
-    const edgesChanged = JSON.stringify(prevStoreEdgesRef.current) !== JSON.stringify(storeEdges)
+    // Use length comparison as a quick check before deep comparison
+    const nodesLengthChanged = prevStoreNodesRef.current.length !== storeNodes.length
+    const edgesLengthChanged = prevStoreEdgesRef.current.length !== storeEdges.length
+    
+    // Force update when node/edge count changes (for deletions), even if from canvas
+    const forceSync = nodesLengthChanged || edgesLengthChanged
+    
+    // Skip if changes originated from canvas (dragging) to prevent sync loop, unless forced
+    if (isCanvasUpdate.current && !forceSync) {
+      console.log('CanvasArea: Skipping sync - change originated from canvas')
+      return
+    }
+    
+    const nodesChanged = nodesLengthChanged || JSON.stringify(prevStoreNodesRef.current) !== JSON.stringify(storeNodes)
+    const edgesChanged = edgesLengthChanged || JSON.stringify(prevStoreEdgesRef.current) !== JSON.stringify(storeEdges)
 
     if (nodesChanged || edgesChanged) {
       console.log('CanvasArea: Syncing store changes to React Flow')

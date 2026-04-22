@@ -3,7 +3,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
-  GitBranch,
   Settings,
   ChevronDown,
   Workflow,
@@ -17,11 +16,6 @@ const navItems = [
     label: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
-  },
-  {
-    label: "Journeys",
-    href: "/journeys",
-    icon: GitBranch,
   },
   {
     label: "Configurações",

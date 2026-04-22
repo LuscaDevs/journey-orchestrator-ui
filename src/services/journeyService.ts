@@ -1,12 +1,13 @@
-import { JourneyDefinitionsApi } from "../api";
+import { JourneyDefinitionsApi, JourneyInstancesApi } from "../api";
 import { apiConfig } from "./apiConfig";
-import type { JourneyDefinitionResponse, CreateJourneyDefinitionRequest } from "../api";
+import type { JourneyDefinitionResponse, CreateJourneyDefinitionRequest, JourneyInstanceResponse } from "../api";
 
-const api = new JourneyDefinitionsApi(apiConfig);
+const definitionsApi = new JourneyDefinitionsApi(apiConfig);
+const instancesApi = new JourneyInstancesApi(apiConfig);
 
 export const createJourneyDefinition = async (data: CreateJourneyDefinitionRequest): Promise<JourneyDefinitionResponse> => {
     try {
-        const response = await api.createJourneyDefinition(data);
+        const response = await definitionsApi.createJourneyDefinition(data);
         return response.data;
     } catch (error) {
         console.error('Error creating journey definition:', error);
@@ -16,7 +17,7 @@ export const createJourneyDefinition = async (data: CreateJourneyDefinitionReque
 
 export const listJourneyDefinitions = async (): Promise<JourneyDefinitionResponse[]> => {
     try {
-        const response = await api.listJourneyDefinitions();
+        const response = await definitionsApi.listJourneyDefinitions();
         return response.data;
     } catch (error) {
         console.error('Error listing journey definitions:', error);
@@ -26,7 +27,7 @@ export const listJourneyDefinitions = async (): Promise<JourneyDefinitionRespons
 
 export const getJourneyDefinitionsByCode = async (journeyCode: string): Promise<JourneyDefinitionResponse[]> => {
     try {
-        const response = await api.getJourneyDefinitionsByCode(journeyCode);
+        const response = await definitionsApi.getJourneyDefinitionsByCode(journeyCode);
         return response.data;
     } catch (error) {
         console.error('Error getting journey definitions by code:', error);
@@ -39,7 +40,7 @@ export const getJourneyDefinitionsByCode = async (journeyCode: string): Promise<
  */
 export const updateJourneyDefinition = async (id: string, data: CreateJourneyDefinitionRequest): Promise<JourneyDefinitionResponse> => {
     try {
-        const response = await api.updateJourneyDefinition(id, data);
+        const response = await definitionsApi.updateJourneyDefinition(id, data);
         return response.data;
     } catch (error) {
         console.error('Error updating journey definition:', error);
@@ -52,7 +53,7 @@ export const updateJourneyDefinition = async (id: string, data: CreateJourneyDef
  */
 export const deleteJourneyDefinition = async (id: string): Promise<void> => {
     try {
-        const response = await api.deleteJourneyDefinition(id);
+        const response = await definitionsApi.deleteJourneyDefinition(id);
         return response.data;
     } catch (error) {
         console.error('Error deleting journey definition:', error);
@@ -71,6 +72,32 @@ export const getJourneyDefinitionById = async (id: string): Promise<JourneyDefin
         return definition || null;
     } catch (error) {
         console.error('Error getting journey definition by ID:', error);
+        throw error;
+    }
+};
+
+/**
+ * List all journey instances
+ */
+export const listJourneyInstances = async (): Promise<JourneyInstanceResponse[]> => {
+    try {
+        const response = await instancesApi.listJourneyInstances();
+        return response.data;
+    } catch (error) {
+        console.error('Error listing journey instances:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get a specific journey instance by ID
+ */
+export const getJourneyInstance = async (instanceId: string): Promise<JourneyInstanceResponse> => {
+    try {
+        const response = await instancesApi.getJourneyInstance(instanceId);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting journey instance:', error);
         throw error;
     }
 };

@@ -116,6 +116,27 @@ export function CanvasArea({ className }: CanvasAreaProps) {
       isInitialized.current = true
       return // Skip on initial load
     }
+
+    // Filter out selection-only changes by comparing structure
+    const prevNodes = prevStoreNodesRef.current
+    const prevEdges = prevStoreEdgesRef.current
+
+    // Filter React Flow UI properties (selected, width, height, dragging)
+    const filterNodeProps = (n: any) => {
+      const { selected, width, height, dragging, ...rest } = n;
+      return rest;
+    };
+
+    // Check if only selection changed by comparing without React Flow UI properties
+    const nodesEqual = JSON.stringify(nodes.map(filterNodeProps)) ===
+                      JSON.stringify(prevNodes.map(filterNodeProps))
+    const edgesEqual = JSON.stringify(edges.map(e => ({ ...e, selected: undefined }))) ===
+                      JSON.stringify(prevEdges.map(e => ({ ...e, selected: undefined })))
+
+    if (nodesEqual && edgesEqual) {
+      return
+    }
+
     isCanvasUpdate.current = true
     updateCurrentDefinition(nodes, edges)
     // Reset flag after a short delay to allow store update to complete
@@ -142,7 +163,6 @@ export function CanvasArea({ className }: CanvasAreaProps) {
     
     // Skip if changes originated from canvas (dragging) to prevent sync loop, unless forced
     if (isCanvasUpdate.current && !forceSync) {
-      console.log('CanvasArea: Skipping sync - change originated from canvas')
       return
     }
     
@@ -150,7 +170,6 @@ export function CanvasArea({ className }: CanvasAreaProps) {
     const edgesChanged = edgesLengthChanged || JSON.stringify(prevStoreEdgesRef.current) !== JSON.stringify(storeEdges)
 
     if (nodesChanged || edgesChanged) {
-      console.log('CanvasArea: Syncing store changes to React Flow')
       setNodes(storeNodes)
       setEdges(storeEdges)
       prevStoreNodesRef.current = storeNodes
@@ -160,8 +179,6 @@ export function CanvasArea({ className }: CanvasAreaProps) {
 
   const onConnect = useCallback(
     (connection: Connection) => {
-      console.log('onConnect called:', connection);
-      
       if (connection.source && connection.target) {
         // Validate connection before creating edge
         if (validateConnection(connection, nodes)) {

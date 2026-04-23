@@ -18,6 +18,8 @@ interface JourneyDefinitionState {
   error: string | null;
   success: string | null;
   isNewJourney: boolean; // Track if this is a newly created journey not yet persisted
+  undoStack: JourneyDefinition[];
+  redoStack: JourneyDefinition[];
 }
 
 interface JourneyDefinitionActions {
@@ -35,6 +37,10 @@ interface JourneyDefinitionActions {
   clearError: () => void;
   clearSuccess: () => void;
   hasActualChanges: () => boolean;
+  // Undo/Redo
+  pushToUndo: () => void;
+  undo: () => void;
+  redo: () => void;
   // Derived state helpers
   getNodes: () => Node[];
   getEdges: () => Edge[];
@@ -63,11 +69,15 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   error: null,
   success: null,
   isNewJourney: false,
+  undoStack: [],
+  redoStack: [],
 
   setCurrentDefinition: (definition) => {
     set({
       currentDefinition: definition,
-      hasUnsavedChanges: false
+      hasUnsavedChanges: false,
+      undoStack: [],
+      redoStack: []
     });
   },
 
@@ -97,7 +107,9 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
         currentDefinition: newDefinition,
         hasUnsavedChanges: true, // Mark as unsaved since it's not persisted yet
         isNewJourney: true, // Mark as new journey that needs to be persisted
-        isLoading: false
+        isLoading: false,
+        undoStack: [],
+        redoStack: []
       }));
     } catch (error) {
       set({ 
@@ -222,9 +234,11 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       initialDefinition: JSON.parse(JSON.stringify(definition)),
       hasUnsavedChanges: false,
       isNewJourney: false, // This is an existing journey, not new
-      isInitializing: true // Set to true to prevent sync changes during load
+      isInitializing: true, // Set to true to prevent sync changes during load
+      undoStack: [],
+      redoStack: []
     });
-    
+
     // Clear initialization flag after a short delay to allow React Flow to settle
     setTimeout(() => {
       set({ isInitializing: false });
@@ -264,21 +278,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   // Function to check if there are actual changes
   hasActualChanges: () => {
     const { currentDefinition, initialDefinition } = get();
-    console.log('hasActualChanges called:', {
-      hasCurrent: !!currentDefinition,
-      hasInitial: !!initialDefinition,
-      currentId: currentDefinition?.id,
-      initialId: initialDefinition?.id,
-      currentName: currentDefinition?.name,
-      initialName: initialDefinition?.name,
-      currentCode: currentDefinition?.journeyCode,
-      initialCode: initialDefinition?.journeyCode,
-      currentStatus: currentDefinition?.status,
-      initialStatus: initialDefinition?.status
-    });
 
     if (!currentDefinition || !initialDefinition) {
-      console.log('hasActualChanges: missing definitions, returning false');
       return false;
     }
 
@@ -288,7 +289,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       metadata: {
         ...currentDefinition.metadata,
         updatedAt: initialDefinition.metadata.updatedAt // Ignore updatedAt differences
-      }
+      },
+      isNew: undefined // Ignore isNew property
     };
 
     const initialCopy = {
@@ -296,7 +298,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       metadata: {
         ...initialDefinition.metadata,
         updatedAt: initialDefinition.metadata.updatedAt
-      }
+      },
+      isNew: undefined // Ignore isNew property
     };
 
     // Deep comparison ignoring selection-related changes
@@ -304,51 +307,38 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     const initialStr = JSON.stringify(initialCopy);
     const hasChanges = currentStr !== initialStr;
 
-    console.log('hasActualChanges result:', hasChanges);
-    console.log('Current length:', currentStr.length, 'Initial length:', initialStr.length);
-
-    if (hasChanges) {
-      console.log('Difference detected, comparing key fields:');
-      console.log('Name match:', currentDefinition.name === initialDefinition.name);
-      console.log('Code match:', currentDefinition.journeyCode === initialDefinition.journeyCode);
-      console.log('Status match:', currentDefinition.status === initialDefinition.status);
-      console.log('Version match:', currentDefinition.version === initialDefinition.version);
-      console.log('Nodes length match:', currentDefinition.nodes?.length === initialDefinition.nodes?.length);
-      console.log('Edges length match:', currentDefinition.edges?.length === initialDefinition.edges?.length);
-      console.log('Current JSON:', currentStr);
-      console.log('Initial JSON:', initialStr);
-    }
-
     return hasChanges;
   },
 
   updateCurrentDefinition: (nodes, edges) => {
     const { currentDefinition, isInitializing } = get();
-    console.log('updateCurrentDefinition called:', { 
-      nodesCount: nodes.length, 
-      edgesCount: edges.length,
-      hasCurrentDefinition: !!currentDefinition,
-      isInitializing
-    });
-    
+
     // Skip updates during initialization
     if (isInitializing) {
-      console.log('updateCurrentDefinition: skipping due to initialization');
       return;
     }
-    
+
     if (!currentDefinition) return;
 
     // Get current React Flow nodes/edges for comparison
     const currentReactFlowNodes = fromJourneyDefinition(currentDefinition).nodes;
     const currentReactFlowEdges = fromJourneyDefinition(currentDefinition).edges;
-    
-    // Compare React Flow format nodes/edges to detect actual changes
-    const nodesEqual = JSON.stringify(currentReactFlowNodes) === JSON.stringify(nodes);
-    const edgesEqual = JSON.stringify(currentReactFlowEdges) === JSON.stringify(edges);
-    
+
+    // Compare React Flow format nodes/edges to detect actual changes, ignoring React Flow UI properties
+    const filterNodeProps = (n: any) => {
+      const { selected, width, height, dragging, ...rest } = n;
+      return rest;
+    };
+
+    const currentNodesStr = JSON.stringify(currentReactFlowNodes.map(filterNodeProps));
+    const newNodesStr = JSON.stringify(nodes.map(filterNodeProps));
+    const currentEdgesStr = JSON.stringify(currentReactFlowEdges.map(e => ({ ...e, selected: undefined })));
+    const newEdgesStr = JSON.stringify(edges.map(e => ({ ...e, selected: undefined })));
+
+    const nodesEqual = currentNodesStr === newNodesStr;
+    const edgesEqual = currentEdgesStr === newEdgesStr;
+
     if (nodesEqual && edgesEqual) {
-      console.log('updateCurrentDefinition: skipping - only selection changed');
       return;
     }
 
@@ -441,6 +431,74 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     set({ success: null });
   },
 
+  // Undo/Redo
+  pushToUndo: () => {
+    const { currentDefinition, undoStack } = get();
+
+    if (!currentDefinition) return;
+
+    set({
+      undoStack: [...undoStack, structuredClone(currentDefinition)],
+      redoStack: []
+    });
+  },
+
+  undo: () => {
+    const { undoStack, currentDefinition, redoStack, initialDefinition } = get();
+
+    if (undoStack.length === 0) return;
+
+    const previous = undoStack[undoStack.length - 1];
+
+    set({
+      currentDefinition: structuredClone(previous),
+      undoStack: undoStack.slice(0, -1),
+      redoStack: currentDefinition ? [...redoStack, structuredClone(currentDefinition)] : redoStack,
+      hasUnsavedChanges: true
+    });
+
+    // Check if current state matches initial state after undo
+    const { currentDefinition: newCurrent } = get();
+    if (newCurrent && initialDefinition) {
+      const currentStr = JSON.stringify({
+        ...newCurrent,
+        metadata: { ...newCurrent.metadata, updatedAt: initialDefinition.metadata.updatedAt }
+      });
+      const initialStr = JSON.stringify(initialDefinition);
+      if (currentStr === initialStr) {
+        set({ hasUnsavedChanges: false });
+      }
+    }
+  },
+
+  redo: () => {
+    const { redoStack, currentDefinition, undoStack, initialDefinition } = get();
+
+    if (redoStack.length === 0) return;
+
+    const next = redoStack[redoStack.length - 1];
+
+    set({
+      currentDefinition: structuredClone(next),
+      redoStack: redoStack.slice(0, -1),
+      undoStack: currentDefinition ? [...undoStack, structuredClone(currentDefinition)] : undoStack,
+      hasUnsavedChanges: true
+    });
+
+    // Check if current state matches initial state after redo
+    const { currentDefinition: newCurrent } = get();
+    if (newCurrent && initialDefinition) {
+      const currentStr = JSON.stringify({
+        ...newCurrent,
+        metadata: { ...newCurrent.metadata, updatedAt: initialDefinition.metadata.updatedAt }
+      });
+      const initialStr = JSON.stringify(initialDefinition);
+      if (currentStr === initialStr) {
+        set({ hasUnsavedChanges: false });
+      }
+    }
+  },
+
   // Derived state helpers
   getNodes: () => {
     const { currentDefinition } = get();
@@ -497,6 +555,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
       }
     }
 
+    get().pushToUndo();
+
     const newNode = {
       id: uuidv4(),
       type: 'stateNode' as const,
@@ -520,6 +580,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     const { currentDefinition } = get();
     if (!currentDefinition) return;
 
+    get().pushToUndo();
+
     const { nodes, edges } = fromJourneyDefinition(currentDefinition);
     const filteredNodes = nodes.filter((node) => node.id !== nodeId);
     const filteredEdges = edges.filter(
@@ -532,6 +594,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   addEdge: (source, target, event = 'transition') => {
     const { currentDefinition } = get();
     if (!currentDefinition) return;
+
+    get().pushToUndo();
 
     const { nodes, edges } = fromJourneyDefinition(currentDefinition);
     const newEdge = {
@@ -552,6 +616,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     const { currentDefinition } = get();
     if (!currentDefinition) return;
 
+    get().pushToUndo();
+
     const { nodes, edges } = fromJourneyDefinition(currentDefinition);
     const filteredEdges = edges.filter((edge) => edge.id !== edgeId);
     
@@ -561,6 +627,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   updateNodeName: (nodeId, newName) => {
     const { currentDefinition } = get();
     if (!currentDefinition) return;
+
+    get().pushToUndo();
 
     const { nodes, edges } = fromJourneyDefinition(currentDefinition);
     const updatedNodes = nodes.map((node) =>
@@ -576,6 +644,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
     const { currentDefinition } = get();
     if (!currentDefinition) return;
 
+    get().pushToUndo();
+
     const { nodes, edges } = fromJourneyDefinition(currentDefinition);
     const updatedEdges = edges.map((edge) =>
       edge.id === edgeId
@@ -589,6 +659,8 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   updateEdgeConditions: (edgeId, conditions) => {
     const { currentDefinition } = get();
     if (!currentDefinition) return;
+
+    get().pushToUndo();
 
     const { nodes, edges } = fromJourneyDefinition(currentDefinition);
     const updatedEdges = edges.map((edge) =>

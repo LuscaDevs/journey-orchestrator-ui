@@ -15,6 +15,8 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle,
+  Undo,
+  Redo,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -41,7 +43,11 @@ export function TopBar() {
     isLoading,
     clearError,
     success,
-    clearSuccess
+    clearSuccess,
+    undo,
+    redo,
+    undoStack,
+    redoStack,
   } = useJourneyDefinitionStore()
   const saveJustCompleted = React.useRef(false)
 
@@ -64,6 +70,29 @@ export function TopBar() {
       saveJustCompleted.current = false
     }
   }, [currentDefinition])
+
+  // Keyboard shortcuts for undo/redo
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is in an input field - don't trigger shortcuts
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      if (e.ctrlKey && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+      if (e.ctrlKey && e.key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   const handleNameChange = (value: string) => {
     setEditedName(value)
@@ -301,6 +330,28 @@ export function TopBar() {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={undo}
+          disabled={undoStack.length === 0}
+          title="Desfazer (Ctrl+Z)"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Undo className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={redo}
+          disabled={redoStack.length === 0}
+          title="Refazer (Ctrl+Y)"
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <Redo className="h-4 w-4" />
+        </Button>
+
         <Button
           variant="outline"
           size="sm"

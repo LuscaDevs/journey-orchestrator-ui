@@ -15,6 +15,8 @@ interface TransitionEdgeData {
   condition?: string
 }
 
+type EditingField = 'event' | 'condition' | null
+
 function TransitionEdgeComponent({
   id,
   sourceX,
@@ -26,32 +28,45 @@ function TransitionEdgeComponent({
   data,
   selected,
 }: EdgeProps<TransitionEdgeData>) {
-  const { updateEdgeName } = useJourneyDefinitionStore()
-  const [isEditing, setIsEditing] = useState(false)
-  const [editName, setEditName] = useState(data?.event || "Transição")
+  const { updateEdgeName, updateEdgeConditions } = useJourneyDefinitionStore()
+  const [editingField, setEditingField] = useState<EditingField>(null)
+  const [editEvent, setEditEvent] = useState(data?.event || "Transição")
+  const [editCondition, setEditCondition] = useState(data?.condition || "")
 
-  const handleDoubleClick = useCallback(() => {
-    setIsEditing(true)
-    setEditName(data?.event || "Transição")
+  const handleEventDoubleClick = useCallback(() => {
+    setEditingField('event')
+    setEditEvent(data?.event || "Transição")
   }, [data?.event])
+
+  const handleConditionDoubleClick = useCallback(() => {
+    setEditingField('condition')
+    setEditCondition(data?.condition || "")
+  }, [data?.condition])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault()
-      // Only update the store - JourneyDefinition is the single source of truth
-      updateEdgeName(id, editName)
-      setIsEditing(false)
+      if (editingField === 'event') {
+        updateEdgeName(id, editEvent)
+      } else if (editingField === 'condition') {
+        updateEdgeConditions(id, editCondition)
+      }
+      setEditingField(null)
     } else if (e.key === "Escape") {
-      setIsEditing(false)
-      setEditName(data?.event || "Transição")
+      setEditingField(null)
+      setEditEvent(data?.event || "Transição")
+      setEditCondition(data?.condition || "")
     }
-  }, [editName, id, updateEdgeName, data?.event])
+  }, [editingField, editEvent, editCondition, id, updateEdgeName, updateEdgeConditions, data?.event, data?.condition])
 
   const handleBlur = useCallback(() => {
-    // Only update the store - JourneyDefinition is the single source of truth
-    updateEdgeName(id, editName)
-    setIsEditing(false)
-  }, [editName, id, updateEdgeName])
+    if (editingField === 'event') {
+      updateEdgeName(id, editEvent)
+    } else if (editingField === 'condition') {
+      updateEdgeConditions(id, editCondition)
+    }
+    setEditingField(null)
+  }, [editingField, editEvent, editCondition, id, updateEdgeName, updateEdgeConditions])
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -82,35 +97,59 @@ function TransitionEdgeComponent({
             pointerEvents: "all",
           }}
           className={cn(
-            "nodrag nopan cursor-pointer rounded-md border px-2 py-1 text-xs transition-all",
+            "nodrag nopan cursor-pointer rounded-md border px-2 py-1.5 text-xs transition-all",
             "bg-popover text-popover-foreground shadow-md",
             selected
               ? "border-primary ring-1 ring-primary"
               : "border-border hover:border-muted-foreground"
           )}
-          onDoubleClick={handleDoubleClick}
         >
-          {isEditing ? (
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onBlur={handleBlur}
-              autoFocus
-              className="bg-transparent outline-none w-20 text-center"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <>
-              <span className="font-medium">{data?.event || "Transição"}</span>
-              {data?.condition && (
-                <span className="ml-1.5 text-muted-foreground">
-                  [{data.condition}]
+          <div className="flex flex-col gap-0.5">
+            {/* Event field */}
+            {editingField === 'event' ? (
+              <input
+                type="text"
+                value={editEvent}
+                onChange={(e) => setEditEvent(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
+                autoFocus
+                className="bg-transparent outline-none w-20 text-center font-bold text-foreground"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span
+                className="font-bold text-foreground cursor-pointer"
+                onDoubleClick={handleEventDoubleClick}
+              >
+                {data?.event || "Transição"}
+              </span>
+            )}
+
+            {/* Condition field */}
+            {data?.condition || editingField === 'condition' ? (
+              editingField === 'condition' ? (
+                <input
+                  type="text"
+                  value={editCondition}
+                  onChange={(e) => setEditCondition(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onBlur={handleBlur}
+                  autoFocus
+                  placeholder="(no condition)"
+                  className="bg-transparent outline-none w-24 text-center text-xs italic text-muted-foreground"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span
+                  className="text-xs italic text-muted-foreground cursor-pointer"
+                  onDoubleClick={handleConditionDoubleClick}
+                >
+                  ({data?.condition || "no condition"})
                 </span>
-              )}
-            </>
-          )}
+              )
+            ) : null}
+          </div>
         </div>
       </EdgeLabelRenderer>
     </>

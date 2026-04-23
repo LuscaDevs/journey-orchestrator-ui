@@ -76,11 +76,13 @@ const JourneyEditorContent: React.FC = () => {
     removeEdge,
     updateNodeName,
     updateCurrentDefinition,
+    pushToUndo,
   } = useJourneyDefinitionStore();
 
   // Use refs to track previous state and prevent infinite loops
   const prevNodesRef = useRef<Node[]>([]);
   const prevEdgesRef = useRef<Edge[]>([]);
+  const hasMovedRef = useRef(false);
 
   // Get derived state
   const nodes = getNodes();
@@ -135,10 +137,31 @@ const JourneyEditorContent: React.FC = () => {
     []
   );
 
+  const onNodeDragStart = useCallback(() => {
+    hasMovedRef.current = false;
+  }, []);
+
+  const onNodeDragStop = useCallback(() => {
+    if (hasMovedRef.current) {
+      pushToUndo();
+    }
+  }, [pushToUndo]);
+
   const onNodesChangeHandler = useCallback(
     (changes: any[]) => {
       onNodesChange(changes);
-      
+
+      // Track if any position changes occurred
+      if (changes.some((c: any) => c.type === 'position')) {
+        hasMovedRef.current = true;
+      }
+
+      // Filter out selection-only changes - they shouldn't trigger unsaved changes
+      const nonSelectionChanges = changes.filter((c: any) => c.type !== 'select');
+      if (nonSelectionChanges.length === 0) {
+        return; // Only selection changed, don't update store
+      }
+
       // Get updated state and update JourneyDefinition store
       const currentNodes = getNodes();
       const currentEdges = getEdges();
@@ -171,6 +194,8 @@ const JourneyEditorContent: React.FC = () => {
         onEdgesChange={onEdgesChangeHandler}
         onConnect={onConnect}
         onSelectionChange={onSelectionChange}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDragStop={onNodeDragStop}
         isValidConnection={(connection) => validateConnection(connection, nodesState)}
         fitView
         selectNodesOnDrag={false}

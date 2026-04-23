@@ -1,9 +1,9 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useJourneyDefinitionStore } from "../../store/useJourneyDefinitionStore"
 import { cn } from "../../lib/utils"
 import { Input } from "../ui/Input"
-import { Textarea } from "../ui/Textarea"
 import { Button } from "../ui/Button"
 import { Label } from "../ui/label"
 import {
@@ -14,6 +14,9 @@ import {
   SelectValue,
 } from "../ui/select"
 import { Trash2, X, Circle, Square, Octagon, ArrowRight } from "lucide-react"
+import { RuleBuilder } from "./ruleBuilder/RuleBuilder"
+import type { Rule, RuleGroup } from "../../types/ruleBuilder.types"
+import { createEmptyGroup, parseSpelToRuleTree } from "../../utils/ruleBuilderUtils"
 
 interface PropertiesPanelProps {
   className?: string
@@ -38,12 +41,65 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
     removeEdge,
     getNodes,
     getEdges,
+    currentDefinition,
   } = useJourneyDefinitionStore()
 
   const selectedNode = getSelectedNode()
   const selectedEdge = getSelectedEdge()
   const nodes = getNodes()
   const edges = getEdges()
+
+  // Rule builder state
+  const [ruleTree, setRuleTree] = useState<Rule>(createEmptyGroup())
+  const [panelWidth, setPanelWidth] = useState(400)
+  const [isResizing, setIsResizing] = useState(false)
+
+  // Initialize rule tree when edge is selected
+  useEffect(() => {
+    if (selectedEdge) {
+      const existingSpel = selectedEdge?.data?.condition
+      if (existingSpel && existingSpel.trim()) {
+        try {
+          setRuleTree(parseSpelToRuleTree(existingSpel))
+        } catch (e) {
+          console.error('Failed to parse SpEL:', e)
+          setRuleTree(createEmptyGroup())
+        }
+      } else {
+        setRuleTree(createEmptyGroup())
+      }
+    }
+  }, [selectedEdge?.id])
+
+  // Handle panel resize
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isResizing) {
+        const newWidth = window.innerWidth - e.clientX
+        if (newWidth >= 400 && newWidth <= 800) {
+          setPanelWidth(newWidth)
+        }
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
+
+  const handleResizeStart = () => {
+    setIsResizing(true)
+  }
 
   const handleClose = () => {
     setSelectedNode(null)
@@ -62,9 +118,13 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
     }
   }
 
-  const handleEdgeConditionsChange = (conditions: string) => {
+  const handleRuleTreeChange = (rule: Rule) => {
+    setRuleTree(rule)
+  }
+
+  const handleSpelChange = (spel: string) => {
     if (selectedEdge) {
-      updateEdgeConditions(selectedEdge.id, conditions)
+      updateEdgeConditions(selectedEdge.id, spel)
     }
   }
 
@@ -113,10 +173,19 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
   }
 
   return (
-    <aside className={cn(
-      "flex w-80 flex-col border-l border-border bg-card",
-      className
-    )}>
+    <aside 
+      className={cn(
+        "flex flex-col border-l border-border bg-card relative",
+        className
+      )}
+      style={{ width: panelWidth }}
+    >
+      {/* Resize handle */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-primary/50 z-10"
+        onMouseDown={handleResizeStart}
+      />
+      
       <div className="border-b border-border p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Propriedades</h2>
@@ -131,7 +200,7 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
         {selectedNode && (
           <div className="space-y-4">
             <div className="space-y-2">
@@ -246,16 +315,13 @@ export function PropertiesPanel({ className }: PropertiesPanelProps) {
 
             <div className="space-y-2">
               <Label htmlFor="edge-conditions">Condições</Label>
-              <Textarea
-                id="edge-conditions"
-                value={selectedEdge.data?.condition || ''}
-                onChange={(e) => handleEdgeConditionsChange(e.target.value)}
-                placeholder="Ex: score >= 700"
-                rows={2}
-              />
-              <p className="text-xs text-muted-foreground">
-                Expressão condicional para esta transição (opcional)
-              </p>
+              <div className="max-h-96 overflow-y-auto">
+                <RuleBuilder
+                  value={ruleTree}
+                  onChange={handleRuleTreeChange}
+                  onSpelChange={handleSpelChange}
+                />
+              </div>
             </div>
 
             <div className="pt-4 border-t border-border">

@@ -1,4 +1,6 @@
+import React from 'react';
 import type { JourneyDefinitionListItem } from '../types/journey.types';
+import { ConfirmDialog } from './ui/ConfirmDialog';
 import './JourneyDefinitionCard.css';
 
 interface JourneyDefinitionCardProps {
@@ -18,6 +20,8 @@ export function JourneyDefinitionCard({
   disabled = false,
   selected = false,
 }: JourneyDefinitionCardProps) {
+  const [showConfirm, setShowConfirm] = React.useState(false);
+
   const handleClick = () => {
     if (!disabled) {
       onClick(journey.id);
@@ -27,11 +31,20 @@ export function JourneyDefinitionCard({
   const handleActivateDeactivate = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onActivateDeactivate) {
-      const action = journey.status === 'ATIVA' ? 'desativar' : 'ativar';
-      if (confirm(`Tem certeza que deseja ${action} a journey "${journey.name}"?`)) {
-        onActivateDeactivate(journey.id, journey.status);
-      }
+      setShowConfirm(true);
     }
+  };
+
+  const handleConfirmAction = () => {
+    if (onActivateDeactivate) {
+      onActivateDeactivate(journey.id, journey.status);
+    }
+    setShowConfirm(false);
+  };
+
+  const getConfirmMessage = () => {
+    const action = journey.status === 'ATIVA' ? 'desativar' : 'ativar';
+    return `Tem certeza que deseja ${action} a journey "${journey.name}"?`;
   };
 
   const getButtonText = () => {
@@ -99,6 +112,17 @@ export function JourneyDefinitionCard({
         )}
         <span className="journey-card-action">View Details →</span>
       </div>
+
+      <ConfirmDialog
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleConfirmAction}
+        title="Confirmação"
+        message={getConfirmMessage()}
+        variant="confirmation"
+        confirmText="Confirmar"
+        cancelText="Cancelar"
+      />
     </div>
   );
 }

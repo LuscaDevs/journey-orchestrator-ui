@@ -56,9 +56,7 @@ export function JourneysPage() {
   }
 
   function handleDeleteJourney(id: string) {
-    if (confirm('Tem certeza que deseja excluir esta jornada?')) {
-      deleteDefinition(id)
-    }
+    deleteDefinition(id)
   }
 
   function handleDuplicateJourney(journey: Journey) {

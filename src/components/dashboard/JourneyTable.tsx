@@ -11,6 +11,7 @@ import {
 } from "../ui/Table"
 import { Badge } from "../ui/Badge"
 import { Button } from "../ui/Button"
+import { ConfirmDialog } from "../ui/ConfirmDialog"
 import {
   MoreHorizontal,
   Pencil,
@@ -22,7 +23,6 @@ import {
   ArrowRight,
   Power,
   PowerOff,
-  AlertCircle,
 } from "lucide-react"
 import type { Journey, JourneyStatus } from "../../lib/journeyAdapter"
 import { formatDate } from "../../lib/journeyAdapter"
@@ -84,7 +84,7 @@ export function JourneysTable({
   const [confirmDialog, setConfirmDialog] = useState<{
     show: boolean
     journey: Journey | null
-    action: 'publish' | 'activate' | 'deactivate'
+    action: 'publish' | 'activate' | 'deactivate' | 'delete'
   }>({ show: false, journey: null, action: 'publish' })
 
   function handleSort(key: SortKey) {
@@ -96,14 +96,18 @@ export function JourneysTable({
     }
   }
 
-  const handlePublishClick = (journey: Journey, action: 'publish' | 'activate' | 'deactivate') => {
+  const handlePublishClick = (journey: Journey, action: 'publish' | 'activate' | 'deactivate' | 'delete') => {
     setConfirmDialog({ show: true, journey, action })
   }
 
   const handleConfirmAction = () => {
     if (confirmDialog.journey) {
-      const newStatus = confirmDialog.action === 'publish' || confirmDialog.action === 'activate' ? 'ATIVA' : 'INATIVA'
-      onPublish(confirmDialog.journey.id, newStatus)
+      if (confirmDialog.action === 'delete') {
+        onDelete(confirmDialog.journey.id)
+      } else {
+        const newStatus = confirmDialog.action === 'publish' || confirmDialog.action === 'activate' ? 'ATIVA' : 'INATIVA'
+        onPublish(confirmDialog.journey.id, newStatus)
+      }
     }
     setConfirmDialog({ show: false, journey: null, action: 'publish' })
   }
@@ -115,7 +119,8 @@ export function JourneysTable({
   const getConfirmMessage = () => {
     if (!confirmDialog.journey) return ''
     const action = confirmDialog.action === 'publish' ? 'publicar' : 
-                   confirmDialog.action === 'activate' ? 'ativar' : 'desativar'
+                   confirmDialog.action === 'activate' ? 'ativar' : 
+                   confirmDialog.action === 'delete' ? 'excluir' : 'desativar'
     return `Tem certeza que deseja ${action} a journey "${confirmDialog.journey.name}"?`
   }
 
@@ -285,7 +290,7 @@ export function JourneysTable({
                       variant="ghost"
                       size="icon"
                       className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(journey.id)}
+                      onClick={() => handlePublishClick(journey, 'delete')}
                       title="Excluir"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -299,35 +304,16 @@ export function JourneysTable({
       </Table>
 
       {/* Confirmation dialog */}
-      {confirmDialog.show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="max-w-md rounded-lg border border-amber-500/50 bg-card p-6 shadow-lg">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">Confirmação</h3>
-                <p className="text-sm text-muted-foreground">{getConfirmMessage()}</p>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancelAction}
-              >
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleConfirmAction}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                Confirmar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={confirmDialog.show}
+        onClose={handleCancelAction}
+        onConfirm={handleConfirmAction}
+        title={confirmDialog.action === 'delete' ? 'Excluir jornada' : 'Confirmação'}
+        message={getConfirmMessage()}
+        variant={confirmDialog.action === 'delete' ? 'danger' : 'confirmation'}
+        confirmText={confirmDialog.action === 'delete' ? 'Excluir' : 'Confirmar'}
+        cancelText="Cancelar"
+      />
     </div>
   )
 }

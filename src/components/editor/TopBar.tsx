@@ -6,15 +6,14 @@ import { useJourneyDefinitionStore } from "../../store/useJourneyDefinitionStore
 import { Button } from "../ui/Button"
 import { Badge } from "../ui/Badge"
 import { Input } from "../ui/Input"
+import { ConfirmDialog } from "../ui/ConfirmDialog"
 import {
   ArrowLeft,
   Save,
   Upload,
   MoreHorizontal,
   Circle,
-  AlertCircle,
   Loader2,
-  CheckCircle,
   Undo,
   Redo,
 } from "lucide-react"
@@ -54,6 +53,8 @@ export function TopBar() {
 
   const [editedName, setEditedName] = React.useState(currentDefinition?.name || '')
   const [editedCode, setEditedCode] = React.useState(currentDefinition?.journeyCode || '')
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
+  const [showBackConfirm, setShowBackConfirm] = React.useState(false)
 
   // Initialize edited values on mount
   React.useEffect(() => {
@@ -184,13 +185,28 @@ export function TopBar() {
 
   const handleBack = () => {
     if (hasActualChanges() || hasEditedChanges()) {
-      if (confirm("Você tem alterações não salvas. Deseja descartá-las?")) {
-        discardChanges()
-        navigate("/")
-      }
+      setShowBackConfirm(true)
     } else {
       navigate("/")
     }
+  }
+
+  const handleConfirmBack = () => {
+    discardChanges()
+    navigate("/")
+    setShowBackConfirm(false)
+  }
+
+  const handleDelete = () => {
+    setShowDeleteConfirm(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (currentDefinition) {
+      deleteDefinition(currentDefinition.id)
+      navigate("/")
+    }
+    setShowDeleteConfirm(false)
   }
 
   const handleExport = () => {
@@ -213,66 +229,53 @@ export function TopBar() {
     }
   }
 
-  const handleDelete = () => {
-    if (currentDefinition && confirm("Tem certeza que deseja excluir esta jornada?")) {
-      deleteDefinition(currentDefinition.id)
-      navigate("/")
-    }
-  }
-
   if (!currentDefinition) return null
 
   return (
     <>
-      {/* Success alert - centered popup */}
-      {success && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="max-w-md rounded-lg border border-emerald-500/50 bg-card p-6 shadow-lg">
-            <div className="flex items-start gap-4">
-              <CheckCircle className="h-6 w-6 text-emerald-500 flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">Sucesso</h3>
-                <p className="text-sm text-muted-foreground">{success}</p>
-              </div>
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearSuccess}
-                className="gap-2"
-              >
-                Fechar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Success alert */}
+      <ConfirmDialog
+        isOpen={!!success}
+        onClose={clearSuccess}
+        title="Sucesso"
+        message={success || ''}
+        variant="success"
+        showCancel={false}
+      />
 
-      {/* Error alert - centered popup */}
-      {displayError && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="max-w-md rounded-lg border border-destructive/50 bg-card p-6 shadow-lg">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="h-6 w-6 text-destructive flex-shrink-0 mt-0.5" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground mb-1">Erro ao salvar</h3>
-                <p className="text-sm text-muted-foreground">{displayError}</p>
-              </div>
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearError}
-                className="gap-2"
-              >
-                Fechar
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Error alert */}
+      <ConfirmDialog
+        isOpen={!!displayError}
+        onClose={clearError}
+        title="Erro ao salvar"
+        message={displayError || ''}
+        variant="error"
+        showCancel={false}
+      />
+
+      {/* Back confirmation */}
+      <ConfirmDialog
+        isOpen={showBackConfirm}
+        onClose={() => setShowBackConfirm(false)}
+        onConfirm={handleConfirmBack}
+        title="Alterações não salvas"
+        message="Você tem alterações não salvas. Deseja descartá-las?"
+        variant="confirmation"
+        confirmText="Descartar"
+        cancelText="Cancelar"
+      />
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir jornada"
+        message="Tem certeza que deseja excluir esta jornada?"
+        variant="danger"
+        confirmText="Excluir"
+        cancelText="Cancelar"
+      />
 
       <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4">
         {/* Left: Back button + Journey info */}

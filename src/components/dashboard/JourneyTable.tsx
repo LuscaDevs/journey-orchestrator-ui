@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Power,
   PowerOff,
+  AlertCircle,
 } from "lucide-react"
 import type { Journey, JourneyStatus } from "../../lib/journeyAdapter"
 import { formatDate } from "../../lib/journeyAdapter"
@@ -80,6 +81,11 @@ export function JourneysTable({
 }: JourneysTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("code")
   const [sortDir, setSortDir] = useState<SortDir>("asc")
+  const [confirmDialog, setConfirmDialog] = useState<{
+    show: boolean
+    journey: Journey | null
+    action: 'publish' | 'activate' | 'deactivate'
+  }>({ show: false, journey: null, action: 'publish' })
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -88,6 +94,29 @@ export function JourneysTable({
       setSortKey(key)
       setSortDir("asc")
     }
+  }
+
+  const handlePublishClick = (journey: Journey, action: 'publish' | 'activate' | 'deactivate') => {
+    setConfirmDialog({ show: true, journey, action })
+  }
+
+  const handleConfirmAction = () => {
+    if (confirmDialog.journey) {
+      const newStatus = confirmDialog.action === 'publish' || confirmDialog.action === 'activate' ? 'ATIVA' : 'INATIVA'
+      onPublish(confirmDialog.journey.id, newStatus)
+    }
+    setConfirmDialog({ show: false, journey: null, action: 'publish' })
+  }
+
+  const handleCancelAction = () => {
+    setConfirmDialog({ show: false, journey: null, action: 'publish' })
+  }
+
+  const getConfirmMessage = () => {
+    if (!confirmDialog.journey) return ''
+    const action = confirmDialog.action === 'publish' ? 'publicar' : 
+                   confirmDialog.action === 'activate' ? 'ativar' : 'desativar'
+    return `Tem certeza que deseja ${action} a journey "${confirmDialog.journey.name}"?`
   }
 
   const sorted = [...journeys].sort((a, b) => {
@@ -224,7 +253,7 @@ export function JourneysTable({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-[oklch(0.65_0.18_160)] hover:bg-[oklch(0.65_0.18_160/0.1)]"
-                        onClick={() => onPublish(journey.id, "ATIVA")}
+                        onClick={() => handlePublishClick(journey, 'publish')}
                         title="Publicar"
                       >
                         <Globe className="h-3.5 w-3.5" />
@@ -235,7 +264,7 @@ export function JourneysTable({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => onPublish(journey.id, "INATIVA")}
+                        onClick={() => handlePublishClick(journey, 'deactivate')}
                         title="Desativar"
                       >
                         <PowerOff className="h-3.5 w-3.5" />
@@ -246,7 +275,7 @@ export function JourneysTable({
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-[oklch(0.65_0.18_160)] hover:bg-[oklch(0.65_0.18_160/0.1)]"
-                        onClick={() => onPublish(journey.id, "ATIVA")}
+                        onClick={() => handlePublishClick(journey, 'activate')}
                         title="Ativar"
                       >
                         <Power className="h-3.5 w-3.5" />
@@ -268,6 +297,37 @@ export function JourneysTable({
           )}
         </TableBody>
       </Table>
+
+      {/* Confirmation dialog */}
+      {confirmDialog.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="max-w-md rounded-lg border border-amber-500/50 bg-card p-6 shadow-lg">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="h-6 w-6 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground mb-1">Confirmação</h3>
+                <p className="text-sm text-muted-foreground">{getConfirmMessage()}</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCancelAction}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmAction}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -27,7 +27,10 @@ export function JourneyDefinitionCard({
   const handleActivateDeactivate = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onActivateDeactivate) {
-      onActivateDeactivate(journey.id, journey.status);
+      const action = journey.status === 'ATIVA' ? 'desativar' : 'ativar';
+      if (confirm(`Tem certeza que deseja ${action} a journey "${journey.name}"?`)) {
+        onActivateDeactivate(journey.id, journey.status);
+      }
     }
   };
 

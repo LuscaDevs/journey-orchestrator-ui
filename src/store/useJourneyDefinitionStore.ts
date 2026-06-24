@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { JourneyDefinition } from '../types/journey';
 import { toJourneyDefinition, fromJourneyDefinition } from '../utils/journeyConversion';
 import { toApiRequest, fromApiResponse } from '../utils/journeyApiMapper';
-import { createJourneyDefinition, updateJourneyDefinition, deleteJourneyDefinition, listJourneyDefinitions, getJourneyDefinitionById } from '../services/journeyService';
+import { createJourneyDefinition, updateJourneyDefinition, updateJourneyDefinitionStatus, deleteJourneyDefinition, listJourneyDefinitions, getJourneyDefinitionById } from '../services/journeyService';
 import type { Node, Edge } from 'reactflow';
 
 interface JourneyDefinitionState {
@@ -33,6 +33,7 @@ interface JourneyDefinitionActions {
   loadDefinitionsFromAPI: () => Promise<void>;
   updateCurrentDefinition: (nodes: Node[], edges: Edge[]) => void;
   saveCurrentDefinition: () => void;
+  publishCurrentDefinition: () => Promise<void>;
   discardChanges: () => void;
   clearError: () => void;
   clearSuccess: () => void;
@@ -71,6 +72,46 @@ export const useJourneyDefinitionStore = create<JourneyDefinitionState & Journey
   isNewJourney: false,
   undoStack: [],
   redoStack: [],
+
+  publishCurrentDefinition: async () => {
+    const { currentDefinition } = get();
+    if (!currentDefinition) return;
+
+    set({ isLoading: true, error: null, success: null });
+    try {
+      // Call PATCH endpoint to update status to ATIVA
+      const apiResponse = await updateJourneyDefinitionStatus(currentDefinition.id, { status: 'ATIVA' });
+      const persistedDefinition = fromApiResponse(apiResponse);
+
+      set((state) => ({
+        definitions: state.definitions.map(def => def.id === persistedDefinition.id ? persistedDefinition : def),
+        currentDefinition: persistedDefinition,
+        initialDefinition: (() => {
+          const { isNew, ...defWithoutIsNew } = persistedDefinition as any;
+          return JSON.parse(JSON.stringify(defWithoutIsNew));
+        })(),
+        hasUnsavedChanges: false,
+        isLoading: false,
+        success: 'Jornada publicada com sucesso!'
+      }));
+    } catch (error: any) {
+      let errorMessage = 'Failed to publish definition';
+      if (error.response?.data?.errorCode) {
+        errorMessage = error.response.data.errorCode;
+        if (error.response.data.detail) {
+          errorMessage = `${error.response.data.errorCode}|${error.response.data.detail}`;
+        }
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      set({ error: errorMessage, isLoading: false });
+    }
+  },
 
   setCurrentDefinition: (definition) => {
     set({

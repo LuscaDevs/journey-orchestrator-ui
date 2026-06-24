@@ -43,6 +43,7 @@ export const toApiRequest = (definition: JourneyDefinition): CreateJourneyDefini
     journeyCode: definition.journeyCode,
     name: definition.name,
     version: definition.version,
+    status: definition.status,
     states,
     transitions
   };

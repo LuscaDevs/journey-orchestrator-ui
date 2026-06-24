@@ -39,6 +39,7 @@ export function TopBar() {
     deleteDefinition,
     discardChanges,
     saveCurrentDefinition,
+    publishCurrentDefinition,
     error,
     isLoading,
     clearError,
@@ -175,11 +176,9 @@ export function TopBar() {
 
   const displayError = getErrorMessage(error)
 
-  const handlePublish = () => {
-    if (currentDefinition?.status === "RASCUNHO") {
-      // Update status to ATIVA - this would need to be implemented in the store
-      // For now, just save
-      handleSave()
+  const handlePublish = async () => {
+    if (currentDefinition?.status === "RASCUNHO" || currentDefinition?.status === "INATIVA") {
+      await publishCurrentDefinition()
     }
   }
 
@@ -367,7 +366,7 @@ export function TopBar() {
           Salvar
         </Button>
 
-        {currentDefinition.status === "RASCUNHO" && (
+        {(currentDefinition.status === "RASCUNHO" || currentDefinition.status === "INATIVA") && (
           <Button
             size="sm"
             onClick={handlePublish}

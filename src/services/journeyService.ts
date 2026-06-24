@@ -1,6 +1,6 @@
 import { JourneyDefinitionsApi, JourneyInstancesApi } from "../api";
 import { apiConfig } from "./apiConfig";
-import type { JourneyDefinitionResponse, CreateJourneyDefinitionRequest, JourneyInstanceResponse } from "../api";
+import type { JourneyDefinitionResponse, CreateJourneyDefinitionRequest, JourneyInstanceResponse, UpdateStatusRequest } from "../api";
 
 const definitionsApi = new JourneyDefinitionsApi(apiConfig);
 const instancesApi = new JourneyInstancesApi(apiConfig);
@@ -44,6 +44,19 @@ export const updateJourneyDefinition = async (id: string, data: CreateJourneyDef
         return response.data;
     } catch (error) {
         console.error('Error updating journey definition:', error);
+        throw error;
+    }
+};
+
+/**
+ * Update journey definition status by calling the PATCH endpoint
+ */
+export const updateJourneyDefinitionStatus = async (id: string, data: UpdateStatusRequest): Promise<JourneyDefinitionResponse> => {
+    try {
+        const response = await definitionsApi.updateJourneyDefinitionStatus(id, data);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating journey definition status:', error);
         throw error;
     }
 };

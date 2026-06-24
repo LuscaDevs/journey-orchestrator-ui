@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Dashboard from './components/Dashboard'
 import JourneyEditorWithControls from './components/JourneyEditorWithControls'
+import { JourneyInstanceDetailsPage } from './pages/JourneyInstanceDetailsPage'
 import './App.css'
 
 // Placeholder for JourneyDetailsPage - will be implemented in later tasks
@@ -15,6 +16,7 @@ function App() {
           <Routes>
             <Route path="/editor" element={<JourneyEditorWithControls />} />
             <Route path="/journeys/:journeyCode" element={<JourneyDetailsPage />} />
+            <Route path="/journey-instances/:instanceId" element={<JourneyInstanceDetailsPage />} />
             <Route path="/" element={<Dashboard />} />
           </Routes>
         </main>

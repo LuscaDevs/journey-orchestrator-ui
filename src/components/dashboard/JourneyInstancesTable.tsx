@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Table,
   TableBody,
@@ -65,6 +66,7 @@ function StatusBadge({ status }: { status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 
 export function JourneyInstancesTable({
   instances,
 }: JourneyInstancesTableProps) {
+  const navigate = useNavigate()
   const [sortKey, setSortKey] = useState<SortKey>("createdAt")
   const [sortDir, setSortDir] = useState<SortDir>("desc")
 
@@ -126,12 +128,15 @@ export function JourneyInstancesTable({
             <TableHead className="w-44 pr-4">
               <SortButton label="Criado em" col="createdAt" />
             </TableHead>
+            <TableHead className="w-32 pr-4">
+              Ações
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {sorted.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-16 text-muted-foreground text-sm">
+              <TableCell colSpan={7} className="text-center py-16 text-muted-foreground text-sm">
                 Nenhuma instância de jornada encontrada.
               </TableCell>
             </TableRow>
@@ -162,8 +167,17 @@ export function JourneyInstancesTable({
                 <TableCell>
                   <StatusBadge status={instance.status} />
                 </TableCell>
-                <TableCell className="pr-4 text-xs text-gray-600">
+                <TableCell className="text-xs text-gray-600">
                   {formatDate(instance.createdAt)}
+                </TableCell>
+                <TableCell className="pr-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/journey-instances/${instance.instanceId}`)}
+                  >
+                    Visualizar Detalhes
+                  </Button>
                 </TableCell>
               </TableRow>
             ))
